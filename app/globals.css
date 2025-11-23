@@ -7,3 +7,21 @@
 .btn {
   @apply px-5 py-2 bg-gray-800 text-white rounded hover:bg-gray-900 transition;
 }
+
+:root {
+  --dark-blue: #00313a;
+  --light-blue: #36afa4;
+  --light-gray: #2b3941;
+}
+
+@theme inline {
+  --color-darkBlue: var(--dark-blue);
+  --color-lightBlue: var(--light-blue);
+  --color-lightGray: var(--light-gray);
+
+  --font-bodoni: "Bodoni Moda", serif;
+}
+
+body {
+  font-family: "Sora", sans-serif;
+}

@@ -1,8 +1,20 @@
+import Club from "./_components/Club";
+import Contact from "./_components/Contact";
+import Experience from "./_components/Experience";
+import FAQ from "./_components/Faq";
+import Hero from "./_components/Hero";
+import Ownership from "./_components/OwnerShip";
+
 const page = () => {
   return (
     <div>
-      <h1>Welcome to the Home Page</h1>
-      <p>This is the main landing page of the application.</p>
+      <Hero />
+      <Club />
+      <Ownership />
+      <Experience />
+      {/* <SpecialOffer /> */}
+      <FAQ />
+      <Contact />
     </div>
   );
 };

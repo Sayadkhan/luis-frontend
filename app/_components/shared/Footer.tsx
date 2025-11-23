@@ -12,7 +12,7 @@ import {
   Send,
 } from "lucide-react";
 import Image from "next/image";
-import logo from "@/assets/logo.png";
+import logo from "@/public/img/logo.png";
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 

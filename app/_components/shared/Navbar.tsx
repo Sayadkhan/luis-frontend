@@ -5,7 +5,7 @@ import "@/app/globals.css";
 import Link from "next/link";
 import { FiChevronDown } from "react-icons/fi";
 import Image from "next/image";
-import logo from "@/assets/logo.png";
+import logo from "@/public/img/logo.png";
 
 const NavbarMenu = [
   { title: "Home", href: "/" },
@@ -38,7 +38,7 @@ const NavbarMenu = [
 ];
 
 const Navbar = () => {
-  const handleScroll = (e:any, href:any) => {
+  const handleScroll = (e: any, href: any) => {
     if (href.startsWith("#")) {
       e.preventDefault();
       const targetId = href.replace("#", "");

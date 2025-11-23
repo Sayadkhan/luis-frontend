@@ -1,4 +1,4 @@
-import ownershipImg from "@/img/ownership.jpg";
+import ownershipImg from "@/public/img/ownership.jpg";
 const stats = [
   { value: "90+", label: "World-Class Resorts & Properties" },
   { value: "55", label: "Global Destinations" },

@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import contactImg from "@/assets/faq.png";
+import contactImg from "@/public/img/faq.png";
 
 export default function Contact() {
   return (

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { FiChevronDown } from "react-icons/fi";
-import image from "@/assets/faq.jpg";
+import image from "@/img/faq.jpg";
 
 interface FAQItem {
   q: string;

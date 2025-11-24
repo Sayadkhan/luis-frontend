@@ -6,6 +6,7 @@ import Link from "next/link";
 import { FiChevronDown } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/public/img/logo.png";
+import { usePathname } from "next/navigation";
 
 const NavbarMenu = [
   { title: "Home", href: "/" },
@@ -15,8 +16,8 @@ const NavbarMenu = [
     href: "#ownership",
     dropdown: true,
     submenu: [
-      { title: "Why Timeshare?", href: "#why-timeshare" },
-      { title: "Vacation Club Brands", href: "#vacation-club-brands" },
+      { title: "Why Timeshare?", href: "why-timeshare" },
+      { title: "Vacation Club Brands", href: "vacation-club-brands" },
       { title: "Referral Program", href: "#referral-program" },
     ],
   },
@@ -38,6 +39,9 @@ const NavbarMenu = [
 ];
 
 const Navbar = () => {
+  const location = usePathname();
+ 
+
   const handleScroll = (e: any, href: any) => {
     if (href.startsWith("#")) {
       e.preventDefault();
@@ -62,18 +66,26 @@ const Navbar = () => {
   return (
     <section className="">
       {/* navbar top */}
-      <div className="w-full py-4 text-white flex items-center justify-center bg-darkBlue ">
-        <p className="flex items-center gap-1 text-[14px]">
-          Limited villas available for december <GoDotFill size={10} /> Book
-          Early
-        </p>
-      </div>
+      {location === "/" && (
+        <div className="w-full py-4 text-white flex items-center justify-center bg-darkBlue ">
+          <p className="flex items-center gap-1 text-[14px]">
+            Limited villas available for december <GoDotFill size={10} /> Book
+            Early
+          </p>
+        </div>
+      )}
 
       {/* navbar */}
-      <nav className="absolute z-50 w-full text-white px-8 py-6 flex items-center justify-between">
+      <nav
+        className={`absolute z-50 w-full text-white px-8 py-4 flex items-center justify-between ${
+          location === "/why-timeshare" || location === "/vacation-club-brands"
+            ? "bg-darkBlue"
+            : ""
+        }`}
+      >
         {/* Logo */}
         <div className="flex items-center gap-2 text-2xl font-semibold">
-          <Image width={120} height={20} src={logo} alt="logo" />
+          <Image width={120} height={15} src={logo} alt="logo" />
         </div>
 
         {/* Menu */}

@@ -27,7 +27,7 @@ const NavbarMenu = [
     href: "#experiences",
     dropdown: true,
     submenu: [
-      { title: "Accommodations", href: "#accommodations" },
+      { title: "Accommodations", href: "/accommodations" },
       { title: "Excursions", href: "#excursions" },
       { title: "Flights", href: "#flights" },
       { title: "Bundle (API-s)", href: "#bundle" },

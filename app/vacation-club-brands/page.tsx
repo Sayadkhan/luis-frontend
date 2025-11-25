@@ -1,5 +1,6 @@
 import React from "react";
 import { Play, ArrowRight, ChevronRight } from "lucide-react";
+import Image from "next/image";
 
 export default function VacationClubBrandsPage() {
   return (
@@ -32,7 +33,8 @@ export default function VacationClubBrandsPage() {
 
           <div className="relative hidden lg:block h-[400px]">
             <div className="absolute top-0 right-0 w-full h-full  rounded-tl-[100px] rounded-br-[100px] shadow-2xl flex items-center justify-center overflow-hidden">
-              <img
+              <Image
+                alt=""
                 src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000&auto=format&fit=crop"
                 className="w-full h-full object-cover mix-blend-overlay"
               />
@@ -47,7 +49,7 @@ export default function VacationClubBrandsPage() {
       <section className="relative z-10 max-w-7xl mx-auto px-6 pb-32 space-y-32">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center group">
           <div className="relative aspect-video rounded-lg overflow-hidden shadow-2xl cursor-pointer transform transition-all duration-500 hover:-translate-y-2">
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000&auto=format&fit=crop"
               alt="Marriott Vacation Club"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -105,7 +107,7 @@ export default function VacationClubBrandsPage() {
           </div>
 
           <div className="order-1 lg:order-2 relative aspect-video rounded-lg overflow-hidden shadow-2xl cursor-pointer transform transition-all duration-500 hover:-translate-y-2">
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000&auto=format&fit=crop"
               alt="Sheraton Vacation Club"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -121,7 +123,7 @@ export default function VacationClubBrandsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center group">
           <div className="relative aspect-video rounded-lg overflow-hidden shadow-2xl cursor-pointer transform transition-all duration-500 hover:-translate-y-2">
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1000&auto=format&fit=crop"
               alt="Westin Vacation Club"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -171,7 +173,7 @@ export default function VacationClubBrandsPage() {
 
       <section className="relative h-[600px] bg-slate-900 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=2000&auto=format&fit=crop"
             alt="Happy Friends"
             className="w-full h-full object-cover opacity-50 grayscale"
@@ -184,7 +186,8 @@ export default function VacationClubBrandsPage() {
             <div className="flex items-center gap-6 mb-8">
               <div className="w-24 h-24 rounded-full border-2 border-[#CDAE67] p-1">
                 <div className="w-full h-full rounded-full overflow-hidden">
-                  <img
+                  <Image
+                    alt=""
                     src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=400&auto=format&fit=crop"
                     className="w-full h-full object-cover"
                   />

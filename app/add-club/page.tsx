@@ -1,0 +1,470 @@
+"use client";
+
+import React, { useRef, useState } from "react";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import toast, { Toaster } from "react-hot-toast";
+import { MdAdd, MdClose, MdCloudUpload, MdDelete } from "react-icons/md";
+import { useCloudinaryUpload } from "@/hooks/useCloudinaryUpload";
+import { useCreateClubMutation } from "@/redux/features/club/clubApi";
+import RichTextEditor from "@/components/RichTextEditor";
+
+interface ImageItem {
+  url: string;
+  publicId: string;
+}
+
+interface ClubForm {
+  clubTitle: string;
+  slug: string;
+  shortDescription: string;
+  clubDescription: string;
+  clubCategory: string;
+  clubPresidentName: string;
+  totalMembers: number;
+  establishedDate?: string;
+  contactInfo: {
+    phone?: string;
+    email?: string;
+    address?: string;
+  };
+  socialLinks: {
+    platform: string;
+    url: string;
+  }[];
+  clubLogo: ImageItem[];
+  locationImages: {
+    title: string;
+    description?: string;
+    images: ImageItem[];
+  }[];
+  benefits: {
+    title: string;
+    description?: string;
+    icon?: string;
+  }[];
+  membershipTiers: {
+    title: string;
+    price: number;
+    durationInMonths: number;
+    features: string[];
+    isActive: boolean;
+  }[];
+}
+
+function generateSlug(title: string) {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export default function CreateClubForm() {
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const { uploadToCloudinary } = useCloudinaryUpload();
+  const [createClub, { isLoading }] = useCreateClubMutation();
+  const [step, setStep] = useState(0);
+
+  const { register, control, handleSubmit, setValue, watch, reset } = useForm<ClubForm>({
+    defaultValues: {
+      clubTitle: "",
+      slug: "",
+      shortDescription: "",
+      clubDescription: "",
+      clubCategory: "",
+      clubPresidentName: "",
+      totalMembers: 0,
+      establishedDate: "",
+      contactInfo: { phone: "", email: "", address: "" },
+      socialLinks: [{ platform: "", url: "" }],
+      clubLogo: [],
+      locationImages: [],
+      benefits: [{ title: "", description: "", icon: "" }],
+      membershipTiers: [{ title: "Basic", price: 0, durationInMonths: 1, features: [""], isActive: true }],
+    },
+  });
+
+  const socialLinksField = useFieldArray({ control, name: "socialLinks" });
+  const locationsField = useFieldArray({ control, name: "locationImages" });
+  const benefitsField = useFieldArray({ control, name: "benefits" });
+  const tiersField = useFieldArray({ control, name: "membershipTiers" });
+  const clubLogo = watch("clubLogo");
+  const clubTitle = watch("clubTitle");
+
+  const handleTitleBlur = () => {
+    const currentSlug = watch("slug");
+    if (!currentSlug && clubTitle) {
+      setValue("slug", generateSlug(clubTitle));
+    }
+  };
+
+  const uploadLogo = async (files: FileList | null) => {
+    if (!files) return;
+    const tid = toast.loading("Uploading...");
+    try {
+      const uploads = await Promise.all(Array.from(files).map(uploadToCloudinary));
+      setValue("clubLogo", [...clubLogo, ...uploads]);
+      toast.success("Uploaded!", { id: tid });
+    } catch {
+      toast.error("Failed", { id: tid });
+    }
+  };
+
+  const uploadLocationImage = async (file: File, index: number) => {
+    const tid = toast.loading("Uploading...");
+    try {
+      const res = await uploadToCloudinary(file);
+      const curr = watch(`locationImages.${index}.images`) || [];
+      setValue(`locationImages.${index}.images`, [...curr, res]);
+      toast.success("Uploaded!", { id: tid });
+    } catch {
+      toast.error("Failed", { id: tid });
+    }
+  };
+
+  const removeLogo = (i: number) => setValue("clubLogo", clubLogo.filter((_, idx) => idx !== i));
+
+  const onSubmit = async (data: ClubForm) => {
+    if (data.clubLogo.length === 0) {
+      toast.error("Please upload a logo");
+      return;
+    }
+    if (!data.slug) {
+      data.slug = generateSlug(data.clubTitle);
+    }
+    try {
+      const res = await createClub(data).unwrap();
+      toast.success(res.message || "Club created!");
+      reset();
+      setStep(0);
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Error");
+    }
+  };
+
+  const steps = ["Basic Info", "Contact", "Media", "Details"];
+  const inputClass =
+    "w-full h-12 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none";
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 py-10 px-4">
+      <Toaster position="top-right" />
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">Create New Club</h1>
+          <p className="text-slate-500">Complete all steps to add your club</p>
+        </div>
+
+        <div className="flex justify-center gap-4 mb-10">
+          {steps.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setStep(i)}
+              className={`px-6 py-3 rounded-xl font-medium transition-all ${
+                step === i
+                  ? "bg-blue-600 text-white shadow-lg"
+                  : i < step
+                  ? "bg-green-100 text-green-700"
+                  : "bg-white text-slate-500 border border-slate-200"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          {step === 0 && (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-8 space-y-6">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Basic Information</h2>
+              <div className="grid gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Club Name *</label>
+                  <input
+                    {...register("clubTitle")}
+                    onBlur={handleTitleBlur}
+                    className={inputClass}
+                    placeholder="Enter club name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    URL Slug * <span className="text-xs text-slate-400">(auto-generated, used for SEO URL)</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400 text-sm whitespace-nowrap">/clubs/</span>
+                    <input
+                      {...register("slug")}
+                      className={inputClass}
+                      placeholder="my-club-name"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Short Description <span className="text-xs text-slate-400">(shown in cards/listings)</span>
+                  </label>
+                  <textarea
+                    {...register("shortDescription")}
+                    rows={2}
+                    maxLength={200}
+                    className={inputClass + " h-auto py-3"}
+                    placeholder="A brief one or two sentence description..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Full Description * <span className="text-xs text-slate-400">(rich text, shown on club page)</span>
+                  </label>
+                  <Controller
+                    name="clubDescription"
+                    control={control}
+                    render={({ field }) => (
+                      <RichTextEditor
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Write a detailed description of your club..."
+                        minHeight="250px"
+                      />
+                    )}
+                  />
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Category *</label>
+                    <select {...register("clubCategory")} className={inputClass}>
+                      <option value="">Select</option>
+                      <option value="Sports">Sports</option>
+                      <option value="Beach">Beach</option>
+                      <option value="Golf">Golf</option>
+                      <option value="Luxury">Luxury</option>
+                      <option value="Mountain">Mountain</option>
+                      <option value="City">City</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">President Name *</label>
+                    <input {...register("clubPresidentName")} className={inputClass} placeholder="President's name" />
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Total Members</label>
+                    <input
+                      type="number"
+                      {...register("totalMembers", { valueAsNumber: true })}
+                      className={inputClass}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Established Date</label>
+                    <input type="date" {...register("establishedDate")} className={inputClass} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-8 space-y-6">
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Contact Information</h2>
+                <div className="grid gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Phone</label>
+                    <input {...register("contactInfo.phone")} className={inputClass} placeholder="+1 (555) 000-0000" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email</label>
+                    <input type="email" {...register("contactInfo.email")} className={inputClass} placeholder="contact@club.com" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Address</label>
+                    <textarea {...register("contactInfo.address")} rows={3} className={inputClass + " h-auto py-3"} placeholder="Full address..." />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-8 space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Social Links</h2>
+                  <button type="button" onClick={() => socialLinksField.append({ platform: "", url: "" })} className="text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg">
+                    + Add
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {socialLinksField.fields.map((f, i) => (
+                    <div key={f.id} className="flex gap-4">
+                      <select {...register(`socialLinks.${i}.platform`)} className={inputClass + " w-44"}>
+                        <option value="">Platform</option>
+                        <option value="Facebook">Facebook</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="Twitter">Twitter</option>
+                        <option value="Website">Website</option>
+                        <option value="YouTube">YouTube</option>
+                      </select>
+                      <input {...register(`socialLinks.${i}.url`)} className={inputClass + " flex-1"} placeholder="https://..." />
+                      {socialLinksField.fields.length > 1 && (
+                        <button type="button" onClick={() => socialLinksField.remove(i)} className="text-red-500 hover:bg-red-50 p-3 rounded-xl">
+                          <MdDelete />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-8 space-y-6">
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Club Logo *</h2>
+                <div onClick={() => logoInputRef.current?.click()} className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-10 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all">
+                  <MdCloudUpload className="w-16 h-16 mx-auto text-slate-300" />
+                  <p className="mt-4 text-lg font-medium text-slate-600">Click to upload logo</p>
+                  <p className="text-sm text-slate-400">PNG, JPG up to 5MB</p>
+                  <input ref={logoInputRef} hidden type="file" accept="image/*" multiple onChange={(e) => uploadLogo(e.target.files)} />
+                </div>
+                {clubLogo.length > 0 && (
+                  <div className="grid grid-cols-4 gap-4 pt-4">
+                    {clubLogo.map((img, i) => (
+                      <div key={i} className="relative group">
+                        <img src={img.url} className="w-full h-24 object-cover rounded-xl border" alt="" />
+                        <button type="button" onClick={() => removeLogo(i)} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                          <MdClose className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-8 space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Location Images</h2>
+                  <button type="button" onClick={() => locationsField.append({ title: "", description: "", images: [] })} className="text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg">
+                    + Add Location
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {locationsField.fields.length === 0 && <p className="text-center text-slate-400 py-8">No locations added</p>}
+                  {locationsField.fields.map((f, i) => (
+                    <div key={f.id} className="p-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl space-y-4">
+                      <div className="flex justify-between">
+                        <span className="font-semibold text-slate-700">Location {i + 1}</span>
+                        <button type="button" onClick={() => locationsField.remove(i)} className="text-red-500"><MdDelete /></button>
+                      </div>
+                      <input {...register(`locationImages.${i}.title`)} className={inputClass} placeholder="Location name" />
+                      <textarea {...register(`locationImages.${i}.description`)} rows={2} className={inputClass + " h-auto py-3"} placeholder="Description" />
+                      <input type="file" accept="image/*" onChange={(e) => e.target.files && uploadLocationImage(e.target.files[0], i)} className="text-sm" />
+                      {watch(`locationImages.${i}.images`)?.length > 0 && (
+                        <div className="flex gap-2 flex-wrap">
+                          {watch(`locationImages.${i}.images`).map((img, j) => (
+                            <img key={j} src={img.url} className="w-16 h-16 object-cover rounded-lg" alt="" />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-8 space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Benefits</h2>
+                  <button type="button" onClick={() => benefitsField.append({ title: "", description: "", icon: "" })} className="text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg">+ Add</button>
+                </div>
+                <div className="space-y-4">
+                  {benefitsField.fields.map((f, i) => (
+                    <div key={f.id} className="grid sm:grid-cols-4 gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl">
+                      <input {...register(`benefits.${i}.title`)} className={inputClass} placeholder="Benefit title" />
+                      <input {...register(`benefits.${i}.description`)} className={inputClass} placeholder="Description" />
+                      <input {...register(`benefits.${i}.icon`)} className={inputClass} placeholder="Icon (emoji/name)" />
+                      {benefitsField.fields.length > 1 && (
+                        <button type="button" onClick={() => benefitsField.remove(i)} className="text-red-500 p-3"><MdDelete /></button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-8 space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Membership Tiers</h2>
+                  <button type="button" onClick={() => tiersField.append({ title: "", price: 0, durationInMonths: 1, features: [""], isActive: true })} className="text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg">+ Add Tier</button>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-6">
+                  {tiersField.fields.map((f, i) => (
+                    <div key={f.id} className="p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+                      <div className="flex justify-between">
+                        <span className="text-xs font-bold uppercase text-slate-400">Tier {i + 1}</span>
+                        {tiersField.fields.length > 1 && (
+                          <button type="button" onClick={() => tiersField.remove(i)} className="text-red-500"><MdDelete className="w-4 h-4" /></button>
+                        )}
+                      </div>
+                      <input {...register(`membershipTiers.${i}.title`)} className={inputClass + " font-semibold"} placeholder="Tier name" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-2">Price ($)</label>
+                          <input type="number" {...register(`membershipTiers.${i}.price`, { valueAsNumber: true })} className={inputClass} placeholder="0" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-2">Duration (months)</label>
+                          <input type="number" {...register(`membershipTiers.${i}.durationInMonths`, { valueAsNumber: true })} className={inputClass} placeholder="12" />
+                        </div>
+                      </div>
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" {...register(`membershipTiers.${i}.isActive`)} className="w-5 h-5 rounded" />
+                        <span className="text-sm text-slate-600">Active</span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-between pt-6">
+            <div>
+              {step > 0 && (
+                <button type="button" onClick={() => setStep(step - 1)} className="px-6 py-3 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium">
+                  Previous
+                </button>
+              )}
+            </div>
+            <div>
+              {step < steps.length - 1 ? (
+                <button type="button" onClick={() => setStep(step + 1)} className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg">
+                  Next Step
+                </button>
+              ) : (
+                <button type="submit" disabled={isLoading} className="px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-xl font-medium shadow-lg flex items-center gap-2">
+                  {isLoading ? (
+                    <>
+                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <MdAdd className="w-5 h-5" />
+                      Create Club
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,365 @@
+"use client";
+
+import React, { useRef } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import toast, { Toaster } from "react-hot-toast";
+import { MdAdd, MdClose, MdCloudUpload, MdDelete } from "react-icons/md";
+import { useCloudinaryUpload } from "@/hooks/useCloudinaryUpload";
+import { useCreateClubMutation } from "@/redux/features/club/clubApi";
+
+/* =========================
+   TYPES (MATCH BACKEND)
+========================= */
+interface ImageItem {
+  url: string;
+  publicId: string;
+}
+
+interface ClubForm {
+  clubTitle: string;
+  clubDescription: string;
+  clubCategory: string;
+  clubPresidentName: string;
+  totalMembers: number;
+  establishedDate?: string;
+
+  contactInfo: {
+    phone?: string;
+    email?: string;
+    address?: string;
+  };
+
+  socialLinks: {
+    platform: string;
+    url: string;
+  }[];
+
+  clubLogo: ImageItem[];
+
+  locationImages: {
+    title: string;
+    description?: string;
+    images: ImageItem[];
+  }[];
+
+  benefits: {
+    title: string;
+    description?: string;
+    icon?: string;
+  }[];
+
+  membershipTiers: {
+    title: string;
+    price: number;
+    durationInMonths: number;
+    features: string[];
+    isActive: boolean;
+  }[];
+}
+
+/* =========================
+   COMPONENT
+========================= */
+export default function CreateClubForm() {
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const { uploadToCloudinary } = useCloudinaryUpload();
+  const [createClub] = useCreateClubMutation();
+
+  const { register, control, handleSubmit, setValue, watch, reset } =
+    useForm<ClubForm>({
+      defaultValues: {
+        clubTitle: "",
+        clubDescription: "",
+        clubCategory: "",
+        clubPresidentName: "",
+        totalMembers: 0,
+        establishedDate: "",
+        contactInfo: {
+          phone: "",
+          email: "",
+          address: "",
+        },
+        socialLinks: [{ platform: "", url: "" }],
+        clubLogo: [],
+        locationImages: [],
+        benefits: [{ title: "", description: "", icon: "" }],
+        membershipTiers: [
+          {
+            title: "Basic",
+            price: 0,
+            durationInMonths: 1,
+            features: [""],
+            isActive: true,
+          },
+        ],
+      },
+    });
+
+  /* =========================
+     FIELD ARRAYS
+  ========================= */
+  const socialLinksField = useFieldArray({ control, name: "socialLinks" });
+  const locationsField = useFieldArray({ control, name: "locationImages" });
+  const benefitsField = useFieldArray({ control, name: "benefits" });
+  const tiersField = useFieldArray({ control, name: "membershipTiers" });
+
+  const clubLogo = watch("clubLogo");
+
+  /* =========================
+     LOGO UPLOAD
+  ========================= */
+  const uploadLogo = async (files: FileList | null) => {
+    if (!files) return;
+    const uploads = await Promise.all(
+      Array.from(files).map(uploadToCloudinary)
+    );
+    setValue("clubLogo", [...clubLogo, ...uploads]);
+  };
+
+  /* =========================
+     LOCATION IMAGE UPLOAD
+  ========================= */
+  const uploadLocationImage = async (file: File, index: number) => {
+    const res = await uploadToCloudinary(file);
+    const current = watch(`locationImages.${index}.images`) || [];
+    setValue(`locationImages.${index}.images`, [...current, res]);
+  };
+
+  /* =========================
+     SUBMIT
+  ========================= */
+  const onSubmit = async (data: ClubForm) => {
+    if (data.clubLogo.length === 0) {
+      toast.error("Club logo is required");
+      return;
+    }
+
+    try {
+      const res = await createClub(data).unwrap();
+      console.log("API RESPONSE 👉", res);
+      toast.success(res.message || "Club created");
+      reset();
+    } catch (err: any) {
+      console.error("API ERROR 👉", err);
+      toast.error(err?.data?.message || "Validation error");
+    }
+  };
+
+  /* =========================
+     UI
+  ========================= */
+  return (
+    <div className="max-w-6xl mx-auto p-6">
+      <Toaster />
+
+      <h1 className="text-3xl font-bold mb-6">Create Club</h1>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        {/* BASIC INFO */}
+        <section className="card">
+          <h2 className="section-title">Basic Information</h2>
+          <input
+            {...register("clubTitle")}
+            className="input"
+            placeholder="Club Title"
+          />
+          <textarea
+            {...register("clubDescription")}
+            className="input h-24"
+            placeholder="Description"
+          />
+          <input
+            {...register("clubCategory")}
+            className="input"
+            placeholder="Category"
+          />
+          <input
+            {...register("clubPresidentName")}
+            className="input"
+            placeholder="President Name"
+          />
+          <input
+            type="number"
+            {...register("totalMembers")}
+            className="input"
+            placeholder="Total Members"
+          />
+          <input
+            type="date"
+            {...register("establishedDate")}
+            className="input"
+          />
+        </section>
+
+        {/* CONTACT */}
+        <section className="card">
+          <h2 className="section-title">Contact Info</h2>
+          <input
+            {...register("contactInfo.phone")}
+            className="input"
+            placeholder="Phone"
+          />
+          <input
+            {...register("contactInfo.email")}
+            className="input"
+            placeholder="Email"
+          />
+          <input
+            {...register("contactInfo.address")}
+            className="input"
+            placeholder="Address"
+          />
+        </section>
+
+        {/* SOCIAL LINKS */}
+        <section className="card">
+          <h2 className="section-title">Social Links</h2>
+          {socialLinksField.fields.map((_, i) => (
+            <div key={i} className="grid grid-cols-3 gap-3">
+              <input
+                {...register(`socialLinks.${i}.platform`)}
+                className="input"
+                placeholder="Platform"
+              />
+              <input
+                {...register(`socialLinks.${i}.url`)}
+                className="input"
+                placeholder="URL"
+              />
+              <button type="button" onClick={() => socialLinksField.remove(i)}>
+                <MdClose />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => socialLinksField.append({ platform: "", url: "" })}
+          >
+            <MdAdd /> Add Social
+          </button>
+        </section>
+
+        {/* CLUB LOGO */}
+        <section className="card">
+          <h2 className="section-title">Club Logo</h2>
+          <div
+            onClick={() => logoInputRef.current?.click()}
+            className="upload-box"
+          >
+            <MdCloudUpload size={40} />
+            <input
+              ref={logoInputRef}
+              hidden
+              type="file"
+              multiple
+              onChange={(e) => uploadLogo(e.target.files)}
+            />
+          </div>
+          <div className="grid grid-cols-5 gap-3">
+            {clubLogo.map((img, i) => (
+              <img
+                key={i}
+                src={img.url}
+                className="h-24 object-cover rounded"
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* LOCATIONS */}
+        <section className="card">
+          <h2 className="section-title">Location Wise Images</h2>
+          {locationsField.fields.map((_, i) => (
+            <div key={i} className="border p-4 rounded space-y-3">
+              <input
+                {...register(`locationImages.${i}.title`)}
+                className="input"
+                placeholder="Location Title"
+              />
+              <textarea
+                {...register(`locationImages.${i}.description`)}
+                className="input h-20"
+              />
+              <input
+                type="file"
+                onChange={(e) =>
+                  e.target.files && uploadLocationImage(e.target.files[0], i)
+                }
+              />
+              <button type="button" onClick={() => locationsField.remove(i)}>
+                Remove
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() =>
+              locationsField.append({ title: "", description: "", images: [] })
+            }
+          >
+            + Add Location
+          </button>
+        </section>
+
+        {/* BENEFITS */}
+        <section className="card">
+          <h2 className="section-title">Benefits</h2>
+          {benefitsField.fields.map((_, i) => (
+            <div key={i} className="grid grid-cols-3 gap-3">
+              <input
+                {...register(`benefits.${i}.title`)}
+                className="input"
+                placeholder="Title"
+              />
+              <input
+                {...register(`benefits.${i}.description`)}
+                className="input"
+                placeholder="Description"
+              />
+              <input
+                {...register(`benefits.${i}.icon`)}
+                className="input"
+                placeholder="Icon"
+              />
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() =>
+              benefitsField.append({ title: "", description: "", icon: "" })
+            }
+          >
+            + Add Benefit
+          </button>
+        </section>
+
+        {/* MEMBERSHIP TIERS */}
+        <section className="card">
+          <h2 className="section-title">Membership Tiers</h2>
+          {tiersField.fields.map((_, i) => (
+            <div key={i} className="border p-4 rounded space-y-2">
+              <input
+                {...register(`membershipTiers.${i}.title`)}
+                className="input"
+                placeholder="Tier Name"
+              />
+              <input
+                type="number"
+                {...register(`membershipTiers.${i}.price`)}
+                className="input"
+                placeholder="Price"
+              />
+              <input
+                type="number"
+                {...register(`membershipTiers.${i}.durationInMonths`)}
+                className="input"
+              />
+            </div>
+          ))}
+        </section>
+
+        <button className="btn-primary w-full">Create Club</button>
+      </form>
+    </div>
+  );
+}

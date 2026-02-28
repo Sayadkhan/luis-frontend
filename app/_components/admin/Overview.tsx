@@ -9,7 +9,7 @@ export default function Overview() {
   const { data: spotData, isLoading: spotsLoading } = useGetAllSpotQuery(undefined);
   const { data: clubData, isLoading: clubsLoading } = useGetAllClubQuery(undefined);
 
-  const spots = spotData?.data?.data || [];
+  const spots: any[] = spotData?.data?.data || spotData?.data || [];
   const clubs: any[] = clubData?.data?.data || clubData?.data || [];
 
   const stats = [

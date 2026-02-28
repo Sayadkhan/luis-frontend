@@ -6,7 +6,7 @@ import { useGetAllBlogsQuery } from "@/redux/features/blog/blogApi";
 
 export default function BlogHighlights() {
   const { data, isLoading } = useGetAllBlogsQuery("published");
-  const blogs: any[] = data?.data?.data || data?.data || [];
+  const blogs: any[] = data?.data || [];
   const featured = blogs.slice(0, 4);
 
   if (isLoading) {

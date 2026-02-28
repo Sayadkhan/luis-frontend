@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * BLOG EDITOR VERSION 2.0
+ * Fixed Tiptap v3 named imports for Turbopack compatibility.
+ */
+
 import React, { useRef, useCallback } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
@@ -42,7 +47,7 @@ interface RichTextEditorProps {
   minHeight?: string;
 }
 
-export default function RichTextEditor({
+export default function BlogEditor({
   value,
   onChange,
   placeholder = "Start writing...",
@@ -51,31 +56,32 @@ export default function RichTextEditor({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { uploadToCloudinary } = useCloudinaryUpload();
 
-    const editor = useEditor({
-      extensions: [
-        StarterKit,
-        Underline,
-        TextStyle,
-        Color,
-        TextAlign.configure({ types: ["heading", "paragraph"] }),
-        Image.configure({ inline: false, allowBase64: false }),
-        Link.configure({ openOnClick: false }),
-        Placeholder.configure({ placeholder }),
-      ],
-      content: value,
-      onUpdate({ editor }) {
-        onChange(editor.getHTML());
-      },
-    });
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      TextStyle,
+      Color,
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Image.configure({ inline: false, allowBase64: false }),
+      Link.configure({ openOnClick: false }),
+      Placeholder.configure({ placeholder }),
+    ],
+    content: value,
+    immediatelyRender: false, // Recommended for Next.js SSR
+    onUpdate({ editor }) {
+      onChange(editor.getHTML());
+    },
+  });
 
-    // Sync content when value changes from outside (e.g., when editing)
-    React.useEffect(() => {
-      if (editor && value !== editor.getHTML()) {
-        editor.commands.setContent(value);
-      }
-    }, [editor, value]);
+  // Sync content when value changes from outside (e.g., when editing)
+  React.useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value);
+    }
+  }, [editor, value]);
 
-    const handleImageUpload = useCallback(
+  const handleImageUpload = useCallback(
     async (files: FileList | null) => {
       if (!files || !editor) return;
       const tid = toast.loading("Uploading image...");

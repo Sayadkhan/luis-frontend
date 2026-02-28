@@ -52,7 +52,7 @@ export default function Club() {
   const swiperRef = useRef<SwiperType | null>(null);
 
   const { data, isLoading } = useGetAllClubQuery(undefined);
-  const clubs: ClubData[] = data?.data?.data ?? data?.data ?? [];
+  const clubs: ClubData[] = data?.data ?? [];
   console.log("Fetched clubs:", clubs);
 
   const getImage = (club: ClubData) =>

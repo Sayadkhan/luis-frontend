@@ -143,76 +143,9 @@ const Experience = () => {
         </div>
       </section>
 
-      {/* ================= GRID CARDS ================= */}
-      <section className="py-20 sm:py-24 bg-white dark:bg-gray-800 border-t border-slate-100 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-4">
-            <div>
-              <span className="text-amber-600 dark:text-amber-400 font-bold uppercase text-sm tracking-wider">
-                Go Further
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mt-2">
-                More experiences to explore
-              </h2>
-            </div>
-
-            <Link
-              href="#"
-              className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium flex items-center gap-2 transition"
-            >
-              View all options <ArrowRight size={16} />
-            </Link>
-          </div>
-
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8">
-            {/* Card Component */}
-            {[
-              {
-                title: "Cruises",
-                icon: <Compass size={24} />,
-                img: "https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&w=800&q=80",
-                desc: "Thousands of sails to coveted ports around the globe.",
-              },
-              {
-                title: "Vacation Tours",
-                icon: <MapPin size={24} />,
-                img: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80",
-                desc: "Some of the world's most indelible travel experiences.",
-              },
-              {
-                title: "Great Outdoors",
-                icon: <Sun size={24} />,
-                img: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80",
-                desc: "Golf, rafting, biking, hiking and more.",
-              },
-            ].map((card, idx) => (
-              <div
-                key={idx}
-                className="group relative h-[380px] sm:h-[450px] rounded-2xl overflow-hidden cursor-pointer"
-              >
-                <img
-                  src={card.img}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 p-6 sm:p-8 transform translate-y-3 group-hover:translate-y-0 transition-all">
-                  <div className="bg-amber-500 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-4 text-white">
-                    {card.icon}
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-1">
-                    {card.title}
-                  </h3>
-                  <p className="text-slate-200 text-sm sm:text-base opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
-                    {card.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-};
-
-export default Experience;
+      </div>
+    );
+  };
+  
+  export default Experience;
+  

@@ -182,7 +182,7 @@ const SpotAdmin: React.FC = () => {
   const [updateSpot, { isLoading: updating }] = useUpdateSpotMutation();
   const { theme } = useTheme();
 
-  const spots: Spot[] = data?.data?.data || [];
+  const spots: Spot[] = data?.data || [];
   const themeClasses = getThemeClasses(theme);
 
   const [showModal, setShowModal] = useState(false);

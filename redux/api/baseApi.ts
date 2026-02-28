@@ -42,9 +42,9 @@ const baseQueryWithRefreshtoken: BaseQueryFn<
     });
 
     const data = await res.json();
-    if (data?.data?.data?.accessToken) {
+    if (data?.data?.accessToken) {
       const user = (api.getState() as RootState).auth.user;
-      api.dispatch(setUser({ user, accessToken: data.data.data.accessToken }));
+      api.dispatch(setUser({ user, accessToken: data.data.accessToken }));
       result = await baseQuery(args, api, extraOptions);
     } else {
       api.dispatch(logout());

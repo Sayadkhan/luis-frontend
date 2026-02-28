@@ -35,7 +35,7 @@ export default function InquiriesDashboard() {
   const [selected, setSelected] = React.useState<any | null>(null);
   const [filter, setFilter] = React.useState<"all" | "new" | "read">("all");
 
-  const allInquiries: any[] = data?.data?.data || data?.data || [];
+  const allInquiries: any[] = data?.data || [];
   const inquiries = filter === "all" ? allInquiries : allInquiries.filter((i) => i.status === filter);
   const newCount = allInquiries.filter((i) => i.status === "new").length;
 

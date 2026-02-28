@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import type { Club } from "./page";
 import Image from "next/image";
+import { useCreateInquiryMutation } from "@/redux/features/blog/blogApi";
+import toast, { Toaster } from "react-hot-toast";
 
 const CATEGORY_IMAGES: Record<string, string> = {
   Beach:
@@ -35,7 +37,7 @@ const CATEGORY_IMAGES: Record<string, string> = {
 };
 
 export default function ClubDetailClient({ club }: { club: Club | null }) {
-  console.log("ClubDetailClient received club:", club);
+  const [createInquiry] = useCreateInquiryMutation();
   const [activeLocIdx, setActiveLocIdx] = useState(0);
   const [activeImgIdx, setActiveImgIdx] = useState(0);
   const [form, setForm] = useState({
@@ -46,9 +48,20 @@ export default function ClubDetailClient({ club }: { club: Club | null }) {
     guests: "2",
     message: "",
     interest: "",
+    preferredLocation: "",
   });
   const [formSent, setFormSent] = useState(false);
   const [sending, setSending] = useState(false);
+
+  // Set initial preferred location
+  useState(() => {
+    if (club?.locationImages?.[0]?.title) {
+      setForm((prev) => ({
+        ...prev,
+        preferredLocation: club.locationImages[0].title,
+      }));
+    }
+  });
 
   const getImage = (club: Club) =>
     club.clubLogo?.[0]?.url ||
@@ -72,12 +85,10 @@ export default function ClubDetailClient({ club }: { club: Club | null }) {
     );
   }
 
-  // ── Derive hero image from active location ──────────────────────────────
   const locations = club.locationImages || [];
   const activeLoc = locations[activeLocIdx];
   const activeLocImages = activeLoc?.images || [];
 
-  // Hero image priority: active location image → club logo → category fallback
   const heroImage =
     activeLocImages[activeImgIdx]?.url ||
     activeLocImages[0]?.url ||
@@ -88,6 +99,9 @@ export default function ClubDetailClient({ club }: { club: Club | null }) {
   const handleLocSwitch = (idx: number) => {
     setActiveLocIdx(idx);
     setActiveImgIdx(0);
+    if (locations[idx]?.title) {
+      setForm((prev) => ({ ...prev, preferredLocation: locations[idx].title }));
+    }
   };
 
   const handleFormChange = (
@@ -101,14 +115,24 @@ export default function ClubDetailClient({ club }: { club: Club | null }) {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSending(true);
-    // Simulate sending — wire to your API when ready
-    await new Promise((r) => setTimeout(r, 1200));
-    setSending(false);
-    setFormSent(true);
+    try {
+      await createInquiry({
+        ...form,
+        name: `${form.firstName} ${form.lastName}`.trim(),
+        formType: "request-information",
+        reason: form.interest || "ownership",
+      }).unwrap();
+      setFormSent(true);
+    } catch {
+      toast.error("Failed to send request. Please try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#f5f3ef] text-[#1a1a1a] font-sans">
+      <Toaster position="top-right" />
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="relative h-[88vh] w-full overflow-hidden">
         {/* Background image — transitions on location change */}
@@ -120,17 +144,6 @@ export default function ClubDetailClient({ club }: { club: Club | null }) {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/85" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
-
-        {/* Breadcrumb */}
-        {/* <div className="absolute top-8 left-0 right-0 px-6 md:px-16 z-10">
-          <nav className="flex items-center gap-2 text-white/60 text-xs uppercase tracking-widest">
-            <Link href="/" className="hover:text-[#C6AC5E] transition-colors">Home</Link>
-            <ChevronRight size={12} />
-            <Link href="/clubs" className="hover:text-[#C6AC5E] transition-colors">Clubs</Link>
-            <ChevronRight size={12} />
-            <span className="text-[#C6AC5E]">{club.clubTitle}</span>
-          </nav>
-        </div> */}
 
         {/* Hero content */}
         <div className="absolute bottom-0 left-0 right-0 px-6 md:px-16 pb-10 z-10 max-w-7xl mx-auto">
@@ -800,8 +813,9 @@ export default function ClubDetailClient({ club }: { club: Club | null }) {
                       <div className="relative">
                         <select
                           name="preferredLocation"
+                          value={form.preferredLocation}
+                          onChange={handleFormChange}
                           className="w-full appearance-none px-4 py-3 pr-8 rounded-xl border border-stone-200 bg-[#f5f3ef] text-[#0a1628] text-sm focus:outline-none focus:ring-2 focus:ring-[#C6AC5E]/40 focus:border-[#C6AC5E] transition"
-                          defaultValue={activeLoc?.title || ""}
                         >
                           <option value="">Any Location</option>
                           {locations.map((loc, i) => (

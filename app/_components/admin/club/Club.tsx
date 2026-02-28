@@ -13,7 +13,7 @@ export default function ClubDashboard() {
   const { data, isLoading, refetch } = useGetAllClubQuery(undefined);
   const [deleteClub] = useDeleteClubMutation();
 
-  const clubs: any[] = data?.data?.data || data?.data || [];
+  const clubs: any[] = data?.data || [];
 
   const totalClubs = clubs.length;
   const activeClubs = clubs.filter((c: any) => c.status === "active").length;

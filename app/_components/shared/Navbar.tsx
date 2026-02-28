@@ -24,13 +24,12 @@ const NavbarMenu = [
   },
   {
     title: "Experiences",
-    href: "#experiences",
+    href: "/experiences",
     dropdown: true,
     submenu: [
+      { title: "View All Experiences", href: "/experiences" },
       { title: "Accommodations", href: "/accommodations" },
-      { title: "Excursions", href: "#excursions" },
-      { title: "Flights", href: "#flights" },
-      { title: "Bundle (API-s)", href: "#bundle" },
+      { title: "Club Journal (Blog)", href: "/blog" },
     ],
   },
   { title: "Contact", href: "/#contact" },
@@ -43,6 +42,8 @@ const ALWAYS_SOLID = [
   "/vacation-club-brands",
   "/became-a-member",
   "/request-information",
+  "/blog",
+  "/experiences",
 ];
 
 const Navbar = () => {

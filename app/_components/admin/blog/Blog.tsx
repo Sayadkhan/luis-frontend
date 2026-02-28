@@ -1,13 +1,38 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
-import { MdAdd, MdClose, MdCloudUpload, MdDelete, MdEdit, MdPublish, MdVisibility } from "react-icons/md";
+import {
+  MdAdd,
+  MdClose,
+  MdCloudUpload,
+  MdDelete,
+  MdEdit,
+  MdPublish,
+  MdVisibility,
+  MdSettings,
+  MdDrafts,
+  MdChevronLeft,
+} from "react-icons/md";
 import { useCloudinaryUpload } from "@/hooks/useCloudinaryUpload";
-import { useGetAllBlogsQuery, useCreateBlogMutation, useUpdateBlogMutation, useDeleteBlogMutation } from "@/redux/features/blog/blogApi";
-import RichTextEditor from "@/components/RichTextEditor";
+import {
+  useGetAllBlogsQuery,
+  useCreateBlogMutation,
+  useUpdateBlogMutation,
+  useDeleteBlogMutation,
+} from "@/redux/features/blog/blogApi";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+
+const RichTextEditor = dynamic(() => import("@/components/BlogEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[500px] w-full bg-gray-50 dark:bg-gray-800 animate-pulse rounded-2xl flex items-center justify-center">
+      <p className="text-gray-400">Loading editor...</p>
+    </div>
+  ),
+});
 
 interface BlogForm {
   title: string;
@@ -22,10 +47,17 @@ interface BlogForm {
 }
 
 function generateSlug(title: string) {
-  return title.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "");
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
-const inputCls = "w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm";
+const inputCls =
+  "w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all";
+const labelCls = "text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider";
 
 export default function BlogDashboard() {
   const [showForm, setShowForm] = useState(false);
@@ -33,265 +65,443 @@ export default function BlogDashboard() {
   const coverInputRef = React.useRef<HTMLInputElement>(null);
   const { uploadToCloudinary } = useCloudinaryUpload();
 
-  const { data, refetch } = useGetAllBlogsQuery(undefined);
+  const { data, refetch, isLoading } = useGetAllBlogsQuery(undefined);
   const [createBlog, { isLoading: creating }] = useCreateBlogMutation();
   const [updateBlog, { isLoading: updating }] = useUpdateBlogMutation();
   const [deleteBlog] = useDeleteBlogMutation();
 
-  const blogs: any[] = data?.data?.data || data?.data || [];
+  // Handle both possible response shapes: data.data (flat) or data.data.data (old double-wrap)
+  const responseData = data?.data?.data || data?.data;
+  const blogs: any[] = Array.isArray(responseData) ? responseData : [];
 
   const { register, control, handleSubmit, setValue, watch, reset } = useForm<BlogForm>({
     defaultValues: {
-      title: "", slug: "", shortDescription: "", content: "", author: "Admin",
-      category: "General", tags: "", status: "draft", coverImage: undefined,
+      title: "",
+      slug: "",
+      shortDescription: "",
+      content: "",
+      author: "Admin",
+      category: "General",
+      tags: "",
+      status: "draft",
+      coverImage: undefined,
     },
   });
 
   const coverImage = watch("coverImage");
   const title = watch("title");
+  const slug = watch("slug");
 
-  const handleTitleBlur = () => {
-    if (!watch("slug") && title) setValue("slug", generateSlug(title));
-  };
+  // Auto-generate slug from title if slug is empty
+  useEffect(() => {
+    if (title && !editId && !slug) {
+      setValue("slug", generateSlug(title));
+    }
+  }, [title, editId, setValue, slug]);
 
   const uploadCover = async (files: FileList | null) => {
-    if (!files) return;
-    const tid = toast.loading("Uploading...");
+    if (!files || files.length === 0) return;
+    const tid = toast.loading("Uploading cover image...");
     try {
       const uploaded = await uploadToCloudinary(files[0]);
       setValue("coverImage", uploaded);
-      toast.success("Uploaded!", { id: tid });
-    } catch { toast.error("Failed", { id: tid }); }
+      toast.success("Cover image uploaded!", { id: tid });
+    } catch {
+      toast.error("Upload failed", { id: tid });
+    }
   };
 
-  const onSubmit = async (data: BlogForm) => {
-    const payload = { ...data, tags: data.tags.split(",").map((t) => t.trim()).filter(Boolean) };
+  const onSubmit = async (formData: BlogForm) => {
+    const payload = {
+      ...formData,
+      tags: (formData.tags || "")
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+    };
+
     try {
       if (editId) {
         await updateBlog({ id: editId, payload }).unwrap();
-        toast.success("Blog updated!");
+        toast.success("Blog updated successfully!");
       } else {
         await createBlog(payload).unwrap();
-        toast.success("Blog created!");
+        toast.success("Blog published successfully!");
       }
-      reset();
-      setShowForm(false);
-      setEditId(null);
+      handleCloseForm();
       refetch();
     } catch (err: any) {
-      toast.error(err?.data?.message || "Error");
+      toast.error(err?.data?.message || "Something went wrong. Please check your inputs.");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this blog post?")) return;
+    if (!confirm("Are you sure you want to delete this blog post? This action cannot be undone.")) return;
     try {
       await deleteBlog(id).unwrap();
-      toast.success("Deleted!");
+      toast.success("Post deleted permanently.");
       refetch();
-    } catch { toast.error("Delete failed"); }
+    } catch {
+      toast.error("Failed to delete post.");
+    }
   };
 
   const handleEdit = (blog: any) => {
     setEditId(blog._id);
     reset({
-      title: blog.title, slug: blog.slug, shortDescription: blog.shortDescription,
-      content: blog.content, author: blog.author, category: blog.category,
-      tags: (blog.tags || []).join(", "), status: blog.status, coverImage: blog.coverImage,
+      title: blog.title || "",
+      slug: blog.slug || "",
+      shortDescription: blog.shortDescription || "",
+      content: blog.content || "",
+      author: blog.author || "Admin",
+      category: blog.category || "General",
+      tags: Array.isArray(blog.tags) ? blog.tags.join(", ") : (blog.tags || ""),
+      status: blog.status || "draft",
+      coverImage: blog.coverImage,
     });
     setShowForm(true);
   };
 
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditId(null);
+    reset();
+  };
+
+  if (showForm) {
+    return (
+      <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
+        <Toaster position="top-right" />
+        
+        {/* WORDPRESS STYLE TOPBAR */}
+        <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-10">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={handleCloseForm}
+              className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              <MdChevronLeft size={24} />
+            </button>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              {editId ? "Edit Post" : "Add New Post"}
+            </h2>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setValue("status", "draft")}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                watch("status") === "draft" 
+                ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white" 
+                : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+              }`}
+            >
+              Save Draft
+            </button>
+            <button
+              onClick={handleSubmit(onSubmit)}
+              disabled={creating || updating}
+              className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg font-semibold shadow-lg shadow-blue-500/20 transition-all"
+            >
+              {creating || updating ? (
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <MdPublish size={18} />
+              )}
+              {editId ? "Update" : "Publish"}
+            </button>
+          </div>
+        </div>
+
+        {/* MAIN CONTENT AREA (SIDEBAR LAYOUT) */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* EDITOR (LEFT) */}
+          <div className="flex-1 overflow-y-auto p-8 lg:p-12">
+            <div className="max-w-4xl mx-auto space-y-8">
+              {/* Title input (WP style) */}
+              <input
+                {...register("title", { required: true })}
+                placeholder="Add Title"
+                className="w-full bg-transparent text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white border-none focus:ring-0 placeholder:text-gray-300 dark:placeholder:text-gray-700"
+              />
+
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+                <Controller
+                  name="content"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <RichTextEditor
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Start writing your masterpiece..."
+                      minHeight="500px"
+                    />
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SETTINGS SIDEBAR (RIGHT) */}
+          <aside className="w-80 lg:w-96 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 overflow-y-auto hidden md:block">
+            <div className="p-6 space-y-8">
+              {/* Post Settings Section */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 text-gray-900 dark:text-white font-bold pb-2 border-b border-gray-100 dark:border-gray-800">
+                  <MdSettings size={20} className="text-blue-500" />
+                  <span>Post Settings</span>
+                </div>
+
+                <div>
+                  <label className={labelCls}>Status</label>
+                  <select {...register("status")} className={inputCls}>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className={labelCls}>Permalink / Slug</label>
+                  <div className="relative">
+                    <input {...register("slug", { required: true })} className={inputCls} />
+                    <button 
+                      type="button" 
+                      onClick={() => setValue("slug", generateSlug(watch("title")))}
+                      className="absolute right-2 top-1.5 p-1 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded text-xs font-medium"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[10px] text-gray-400">/blog/{watch("slug")}</p>
+                </div>
+                
+                <div>
+                  <label className={labelCls}>Author</label>
+                  <input {...register("author")} className={inputCls} placeholder="Admin" />
+                </div>
+              </section>
+
+              {/* Categorization Section */}
+              <section className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div>
+                  <label className={labelCls}>Category</label>
+                  <select {...register("category")} className={inputCls}>
+                    <option>General</option>
+                    <option>Travel</option>
+                    <option>Lifestyle</option>
+                    <option>Membership</option>
+                    <option>Destinations</option>
+                    <option>Tips</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className={labelCls}>Tags</label>
+                  <input {...register("tags")} className={inputCls} placeholder="vacation, luxury, travel" />
+                  <p className="mt-1 text-[10px] text-gray-400">Separate with commas</p>
+                </div>
+              </section>
+
+              {/* Featured Image Section */}
+              <section className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <label className={labelCls}>Featured Image</label>
+                {coverImage?.url ? (
+                  <div className="group relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                    <img src={coverImage.url} alt="Cover" className="w-full h-48 object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                      <button 
+                        type="button" 
+                        onClick={() => setValue("coverImage", undefined)}
+                        className="p-2 bg-red-500 text-white rounded-full hover:scale-110 transition-transform"
+                      >
+                        <MdDelete size={20} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => coverInputRef.current?.click()} 
+                    className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-all"
+                  >
+                    <MdCloudUpload size={40} className="mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+                    <p className="text-sm font-medium text-gray-400">Set featured image</p>
+                  </div>
+                )}
+                <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={(e) => uploadCover(e.target.files)} />
+              </section>
+
+              {/* Excerpt Section */}
+              <section className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div>
+                  <label className={labelCls}>Excerpt / Short Description</label>
+                  <textarea 
+                    {...register("shortDescription")} 
+                    rows={4} 
+                    maxLength={200} 
+                    className={`${inputCls} resize-none`} 
+                    placeholder="Briefly describe this post for search results and social sharing..." 
+                  />
+                  <div className="flex justify-end mt-1">
+                    <span className="text-[10px] text-gray-400">{(watch("shortDescription") || "").length}/200</span>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-8">
       <Toaster position="top-right" />
 
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
+      {/* LIST HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400">Blog Management</h1>
-          <p className="text-gray-500 dark:text-gray-400">Create and manage blog posts with rich content</p>
+          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Blog Posts</h1>
+          <p className="text-gray-500 dark:text-gray-400 font-medium">Create, edit and manage your content strategy</p>
         </div>
-        <button onClick={() => { setShowForm(true); setEditId(null); reset(); }} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
-          <MdAdd /> New Post
+        <button
+          onClick={() => {
+            setShowForm(true);
+            setEditId(null);
+            reset();
+          }}
+          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5"
+        >
+          <MdAdd size={24} /> Write New Post
         </button>
       </div>
 
       {/* STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <StatCard title="Total Posts" value={String(blogs.length)} />
-        <StatCard title="Published" value={String(blogs.filter((b) => b.status === "published").length)} color="green" />
-        <StatCard title="Drafts" value={String(blogs.filter((b) => b.status === "draft").length)} color="yellow" />
+        <StatCard title="Total Posts" value={String(blogs.length)} icon={<MdVisibility className="text-blue-500" />} />
+        <StatCard title="Published" value={String(blogs.filter((b) => b.status === "published").length)} color="green" icon={<MdPublish className="text-green-500" />} />
+        <StatCard title="Drafts" value={String(blogs.filter((b) => b.status === "draft").length)} color="yellow" icon={<MdDrafts className="text-yellow-600" />} />
       </div>
 
-      {/* BLOG LIST */}
-      {!showForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {blogs.length === 0 ? (
-            <div className="p-12 text-center text-gray-400">
-              <MdAdd className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No blog posts yet. Create your first post!</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100 dark:divide-gray-700">
-              {blogs.map((blog) => (
-                <div key={blog._id} className="p-4 flex items-start gap-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  {blog.coverImage?.url && (
-                    <img src={blog.coverImage.url} alt={blog.title} className="w-20 h-14 object-cover rounded-lg flex-shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-white truncate">{blog.title}</h3>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${blog.status === "published" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                        {blog.status}
-                      </span>
-                    </div>
-                    <p className="text-gray-500 text-sm truncate">{blog.shortDescription}</p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
-                      <span>{blog.category}</span>
-                      <span>·</span>
-                      <span>{blog.author}</span>
-                      <span>·</span>
-                      <span>/blog/{blog.slug}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <Link href={`/blog/${blog.slug}`} target="_blank" className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
-                      <MdVisibility size={18} />
-                    </Link>
-                    <button onClick={() => handleEdit(blog)} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors">
-                      <MdEdit size={18} />
-                    </button>
-                    <button onClick={() => handleDelete(blog._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
-                      <MdDelete size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* BLOG FORM */}
-      {showForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {editId ? "Edit Blog Post" : "Create Blog Post"}
-            </h2>
-            <button onClick={() => { setShowForm(false); setEditId(null); }} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-              <MdClose size={20} />
+      {/* CONTENT LIST */}
+      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-200/50 dark:shadow-none overflow-hidden">
+        {isLoading ? (
+          <div className="p-20 text-center space-y-4">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-gray-500 font-medium">Loading your content...</p>
+          </div>
+        ) : blogs.length === 0 ? (
+          <div className="p-20 text-center">
+            <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">📝</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No posts found</h3>
+            <p className="text-gray-500 max-w-sm mx-auto mb-8">Ready to share some knowledge? Start by creating your first blog post today.</p>
+            <button
+              onClick={() => { setShowForm(true); setEditId(null); reset(); }}
+              className="px-8 py-3 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors"
+            >
+              Create First Post
             </button>
           </div>
+        ) : (
+          <div className="divide-y divide-gray-50 dark:divide-gray-800">
+            {blogs.map((blog) => (
+              <div
+                key={blog._id}
+                className="group p-6 flex flex-col md:flex-row md:items-center gap-6 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all"
+              >
+                {/* Image */}
+                <div className="w-full md:w-40 h-28 rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 border border-gray-100 dark:border-gray-700">
+                  {blog.coverImage?.url ? (
+                    <img src={blog.coverImage.url} alt={blog.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-600 font-bold text-xs uppercase">No Image</div>
+                  )}
+                </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Title *</label>
-                <input {...register("title", { required: true })} onBlur={handleTitleBlur} className={inputCls} placeholder="Blog post title" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Slug * <span className="text-gray-400">(auto-generated)</span></label>
-                <input {...register("slug", { required: true })} className={inputCls} placeholder="my-blog-post" />
-              </div>
-            </div>
+                {/* Content */}
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-center flex-wrap gap-2">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate pr-4">{blog.title}</h3>
+                    <span
+                      className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-widest ${
+                        blog.status === "published"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                          : "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400"
+                      }`}
+                    >
+                      {blog.status}
+                    </span>
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 leading-relaxed">
+                    {blog.shortDescription || "No description provided."}
+                  </p>
+                  <div className="flex items-center flex-wrap gap-4 text-xs font-bold text-gray-400 uppercase tracking-tighter">
+                    <span className="text-blue-500">{blog.category}</span>
+                    <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+                      <span>By {blog.author}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+                      <span suppressHydrationWarning>{blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : "N/A"}</span>
+                    </div>
+                </div>
 
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Short Description <span className="text-gray-400">(shown in blog cards)</span></label>
-              <textarea {...register("shortDescription")} rows={2} maxLength={200} className={inputCls} placeholder="Brief description..." />
-            </div>
-
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Content * <span className="text-gray-400">(rich text with image upload)</span></label>
-              <Controller
-                name="content"
-                control={control}
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <RichTextEditor value={field.value} onChange={field.onChange} placeholder="Write your blog content here..." minHeight="350px" />
-                )}
-              />
-            </div>
-
-            {/* Cover Image */}
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Cover Image</label>
-              {coverImage?.url ? (
-                <div className="relative inline-block">
-                  <img src={coverImage.url} alt="Cover" className="h-32 w-auto rounded-xl border object-cover" />
-                  <button type="button" onClick={() => setValue("coverImage", undefined)} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center">
-                    <MdClose size={12} />
+                {/* Actions */}
+                <div className="flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Link
+                    href={`/blog/${blog.slug}`}
+                    target="_blank"
+                    className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-all"
+                    title="View Post"
+                  >
+                    <MdVisibility size={22} />
+                  </Link>
+                  <button
+                    onClick={() => handleEdit(blog)}
+                    className="p-3 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-xl transition-all"
+                    title="Edit Post"
+                  >
+                    <MdEdit size={22} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(blog._id)}
+                    className="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all"
+                    title="Delete Post"
+                  >
+                    <MdDelete size={22} />
                   </button>
                 </div>
-              ) : (
-                <div onClick={() => coverInputRef.current?.click()} className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center cursor-pointer hover:border-blue-400 transition-all">
-                  <MdCloudUpload size={32} className="mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-500">Click to upload cover image</p>
-                </div>
-              )}
-              <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={(e) => uploadCover(e.target.files)} />
-            </div>
-
-            <div className="grid sm:grid-cols-3 gap-4">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Author</label>
-                <input {...register("author")} className={inputCls} placeholder="Author name" />
               </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Category</label>
-                <select {...register("category")} className={inputCls}>
-                  <option>General</option>
-                  <option>Travel</option>
-                  <option>Lifestyle</option>
-                  <option>Membership</option>
-                  <option>Destinations</option>
-                  <option>Tips</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Status</label>
-                <select {...register("status")} className={inputCls}>
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Tags <span className="text-gray-400">(comma separated)</span></label>
-              <input {...register("tags")} className={inputCls} placeholder="vacation, luxury, travel" />
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={() => { setShowForm(false); setEditId(null); }} className="px-4 py-2 text-gray-600 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-                Cancel
-              </button>
-              <button type="submit" disabled={creating || updating} className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg font-medium">
-                {creating || updating ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <MdPublish size={18} />}
-                {editId ? "Update" : "Publish"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-const StatCard = ({ title, value, color = "blue" }: { title: string; value: string; color?: string }) => {
+const StatCard = ({
+  title,
+  value,
+  color = "blue",
+  icon,
+}: {
+  title: string;
+  value: string;
+  color?: string;
+  icon?: React.ReactNode;
+}) => {
   const colors: Record<string, string> = {
-    blue: "bg-blue-100 dark:bg-blue-900/30",
-    green: "bg-green-100 dark:bg-green-900/30",
-    yellow: "bg-yellow-100 dark:bg-yellow-900/30",
+    blue: "bg-blue-50 dark:bg-blue-950/20",
+    green: "bg-green-50 dark:bg-green-950/20",
+    yellow: "bg-orange-50 dark:bg-orange-950/20",
   };
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow dark:shadow-gray-900/50 p-6 flex justify-between items-center border border-gray-100 dark:border-gray-700">
-      <div>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">{title}</p>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{value}</h2>
+    <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 flex flex-col justify-between border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
+      <div className="flex justify-between items-start mb-4">
+        <p className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wider">{title}</p>
+        <div className={`p-2 rounded-xl ${colors[color]}`}>{icon}</div>
       </div>
-      <div className={`h-12 w-12 rounded-full ${colors[color]}`} />
+      <h2 className="text-4xl font-black text-gray-900 dark:text-white">{value}</h2>
     </div>
   );
 };

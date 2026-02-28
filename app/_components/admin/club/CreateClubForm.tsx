@@ -6,7 +6,12 @@ import toast, { Toaster } from "react-hot-toast";
 import { MdAdd, MdClose, MdCloudUpload, MdDelete } from "react-icons/md";
 import { useCloudinaryUpload } from "@/hooks/useCloudinaryUpload";
 import { useCreateClubMutation } from "@/redux/features/club/clubApi";
-import RichTextEditor from "@/components/RichTextEditor";
+import dynamic from "next/dynamic";
+
+const RichTextEditor = dynamic(() => import("@/components/BlogEditor"), {
+  ssr: false,
+  loading: () => <div className="h-40 w-full bg-gray-100 dark:bg-gray-800 animate-pulse rounded-lg" />,
+});
 
 interface ImageItem {
   url: string;

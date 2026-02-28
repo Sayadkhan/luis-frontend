@@ -147,8 +147,8 @@ const UiSettings: React.FC = () => {
   const themeClasses = getThemeClasses();
 
   useEffect(() => {
-    if (data?.data?.data?.length) {
-      setLatestUI(data.data.data.slice(-1)[0]);
+    if (data?.data?.length) {
+      setLatestUI(data.data.slice(-1)[0]);
     }
   }, [data]);
 

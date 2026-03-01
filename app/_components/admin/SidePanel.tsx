@@ -1,28 +1,33 @@
 "use client";
 import React from "react";
 import {
-    Menu,
-    Home,
-    Users as UsersIcon,
-    ChevronLeft,
-    ChevronRight,
-    LogOut,
-    MapPin,
-    Settings,
-    BarChart3,
-    FileText,
-    Calendar,
-    Bell,
-    HelpCircle,
-    Shield,
-    BookOpen,
-    Inbox,
-  } from "lucide-react";
+  Menu,
+  Home,
+  Users as UsersIcon,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  MapPin,
+  Settings,
+  BarChart3,
+  FileText,
+  Calendar,
+  Bell,
+  HelpCircle,
+  Shield,
+  BookOpen,
+  Inbox,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { useTheme } from "@/providers/ThemeProvider";
 import ThemeToggle from "../shared/ThemeToggle";
 import { useGetAllInquiriesQuery } from "@/redux/features/blog/blogApi";
+import { useAppDispatch } from "@/redux/hook";
+import { useLogoutMutation } from "@/redux/features/auth/authApi";
+import { logout } from "@/redux/features/auth/authSlice";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 interface SidePanelProps {
   selected: string;
@@ -34,10 +39,16 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const { theme } = useTheme();
   const [isMobile, setIsMobile] = React.useState(false);
+  const dispatch = useAppDispatch();
+  const [logoutMutation] = useLogoutMutation();
+  const router = useRouter();
 
   const { data: inquiryData } = useGetAllInquiriesQuery(undefined);
-  const allInquiries: any[] = inquiryData?.data?.data || inquiryData?.data || [];
-  const unreadCount = allInquiries.filter((i: any) => i.status === "new").length;
+  const allInquiries: any[] =
+    inquiryData?.data?.data || inquiryData?.data || [];
+  const unreadCount = allInquiries.filter(
+    (i: any) => i.status === "new",
+  ).length;
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -61,7 +72,7 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
     theme === "light" ? "border-gray-200/60" : "border-gray-700/60";
 
   const getTextColor = (
-    type: "primary" | "secondary" | "muted" = "primary"
+    type: "primary" | "secondary" | "muted" = "primary",
   ) => {
     const colors = {
       primary: theme === "light" ? "text-gray-800" : "text-gray-100",
@@ -86,22 +97,26 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
   };
 
   const menuItems = [
-    { name: "Dashboard", icon: <Home size={20} /> },
+    { name: "Overview", icon: <Home size={20} /> },
     // { name: "Users", icon: <UsersIcon size={20} /> },
     { name: "Clubs", icon: <MapPin size={20} /> },
     { name: "Blog", icon: <BookOpen size={20} /> },
-    { name: "Inquiries", icon: <Inbox size={20} />, badge: unreadCount > 0 ? unreadCount : undefined },
+    {
+      name: "Inquiries",
+      icon: <Inbox size={20} />,
+      badge: unreadCount > 0 ? unreadCount : undefined,
+    },
     // { name: "Spots", icon: <MapPin size={20} /> },
-    { name: "Analytics", icon: <BarChart3 size={20} /> },
-    { name: "Content", icon: <FileText size={20} /> },
-    { name: "Calendar", icon: <Calendar size={20} /> },
+    // { name: "Analytics", icon: <BarChart3 size={20} /> },
+    // { name: "Content", icon: <FileText size={20} /> },
+    // { name: "Calendar", icon: <Calendar size={20} /> },
     { name: "UiSettings", icon: <Settings size={20} /> },
     { name: "Security", icon: <Shield size={20} /> },
   ];
 
   const bottomMenuItems = [
-    { name: "Notifications", icon: <Bell size={20} /> },
-    { name: "Help", icon: <HelpCircle size={20} /> },
+    // { name: "Notifications", icon: <Bell size={20} /> },
+    // { name: "Help", icon: <HelpCircle size={20} /> },
     { name: "Logout", icon: <LogOut size={20} /> },
   ];
 
@@ -242,64 +257,64 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
           <div className="space-y-1">
             <p
               className={`text-xs font-semibold ${getTextColor(
-                "muted"
+                "muted",
               )} uppercase tracking-wider mb-3 px-3`}
             >
               {open ? "Navigation" : ""}
             </p>
 
-              {menuItems.map((item) => (
-                <motion.button
-                  key={item.name}
-                  type="button"
-                  onClick={() => {
-                    setSelected(item.name);
-                    setMobileOpen(false);
-                  }}
-                  className={getMenuItemClass(selected === item.name)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+            {menuItems.map((item) => (
+              <motion.button
+                key={item.name}
+                type="button"
+                onClick={() => {
+                  setSelected(item.name);
+                  setMobileOpen(false);
+                }}
+                className={getMenuItemClass(selected === item.name)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div
+                  className={`flex items-center justify-center relative ${
+                    selected === item.name
+                      ? theme === "light"
+                        ? "text-blue-500"
+                        : "text-blue-400"
+                      : getTextColor("secondary")
+                  }`}
                 >
-                  <div
-                    className={`flex items-center justify-center relative ${
-                      selected === item.name
-                        ? theme === "light"
-                          ? "text-blue-500"
-                          : "text-blue-400"
-                        : getTextColor("secondary")
-                    }`}
-                  >
-                    {item.icon}
-                    {!open && (item as any).badge && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                        {(item as any).badge}
-                      </span>
-                    )}
-                  </div>
-                  {open && (
-                    <motion.span
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="text-sm flex-1"
-                    >
-                      {item.name}
-                    </motion.span>
-                  )}
-                  {open && (item as any).badge && (
-                    <span className="ml-auto bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0">
+                  {item.icon}
+                  {!open && (item as any).badge && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                       {(item as any).badge}
                     </span>
                   )}
-                  {selected === item.name && open && !(item as any).badge && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className={`ml-auto w-2 h-2 rounded-full ${
-                        theme === "light" ? "bg-blue-500" : "bg-blue-400"
-                      }`}
-                    />
-                  )}
-                </motion.button>
-              ))}
+                </div>
+                {open && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="text-sm flex-1"
+                  >
+                    {item.name}
+                  </motion.span>
+                )}
+                {open && (item as any).badge && (
+                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0">
+                    {(item as any).badge}
+                  </span>
+                )}
+                {selected === item.name && open && !(item as any).badge && (
+                  <motion.div
+                    layoutId="activeIndicator"
+                    className={`ml-auto w-2 h-2 rounded-full ${
+                      theme === "light" ? "bg-blue-500" : "bg-blue-400"
+                    }`}
+                  />
+                )}
+              </motion.button>
+            ))}
           </div>
 
           {/* THEME TOGGLE */}
@@ -326,7 +341,7 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
           {open && (
             <p
               className={`text-xs font-semibold ${getTextColor(
-                "muted"
+                "muted",
               )} uppercase tracking-wider mb-3 px-3`}
             >
               Quick Actions
@@ -338,10 +353,21 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
               <motion.button
                 key={item.name}
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   if (item.name === "Logout") {
                     if (confirm("Are you sure you want to logout?")) {
-                      console.log("Logging out...");
+                      try {
+                        await logoutMutation(undefined).unwrap();
+                        dispatch(logout());
+                        toast.success("Logged out successfully");
+                        window.location.href = "/";
+                      } catch (error) {
+                        console.error("Logout failed:", error);
+                        // Fallback: still clear Redux state and redirect
+                        dispatch(logout());
+                        toast.success("Logged out successfully (session cleared)");
+                        window.location.href = "/";
+                      }
                     }
                   } else {
                     setSelected(item.name);

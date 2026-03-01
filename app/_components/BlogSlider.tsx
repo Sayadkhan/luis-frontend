@@ -12,7 +12,10 @@ import { useGetAllBlogsQuery } from "@/redux/features/blog/blogApi";
 
 const BlogSlider = () => {
   const { data, isLoading } = useGetAllBlogsQuery("published");
-  const blogs = data?.data || [];
+  
+  // Handle both possible response shapes: data.data (flat) or data.data.data (old double-wrap)
+  const responseData = data?.data?.data || data?.data;
+  const blogs: any[] = Array.isArray(responseData) ? responseData : [];
 
   if (isLoading) {
     return (
@@ -47,7 +50,7 @@ const BlogSlider = () => {
             href="/blog"
             className="text-slate-400 hover:text-amber-500 font-medium flex items-center gap-2 transition group"
           >
-            View all stories <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            View all options <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 

@@ -38,7 +38,8 @@ async function getRelatedBlogs(category: string, excludeSlug: string): Promise<B
     });
     if (!res.ok) return [];
     const json = await res.json();
-    const all: Blog[] = json.data || [];
+    // Use the same robust data extraction as in the list page
+    const all: Blog[] = json.data?.data || json.data || [];
     return all.filter((b) => b.slug !== excludeSlug && b.category === category).slice(0, 3);
   } catch {
     return [];
@@ -46,6 +47,7 @@ async function getRelatedBlogs(category: string, excludeSlug: string): Promise<B
 }
 
 function estimateReadTime(content: string) {
+  if (!content) return 1;
   const words = content.replace(/<[^>]+>/g, "").split(/\s+/).length;
   return Math.max(1, Math.ceil(words / 200));
 }
@@ -53,7 +55,7 @@ function estimateReadTime(content: string) {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const blog = await getBlog(slug);
-  if (!blog) return { title: "Blog Post Not Found" };
+  if (!blog) return { title: "Blog Post Not Found | Endless Vacations Hub" };
   const description = blog.shortDescription || blog.content.replace(/<[^>]+>/g, "").slice(0, 160);
   return {
     title: `${blog.title} | Club Journal`,

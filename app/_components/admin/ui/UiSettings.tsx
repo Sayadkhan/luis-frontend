@@ -38,6 +38,7 @@ export interface UIData {
   bannerImage: ImageData;
   whatsapp: string;
   email: string;
+  address: string;
   travelPhoto: ImageData;
   explorePhoto: ImageData;
 }
@@ -45,6 +46,7 @@ export interface UIData {
 interface FormData {
   whatsapp: string;
   email: string;
+  address: string;
 }
 
 const UiSettings: React.FC = () => {
@@ -190,6 +192,7 @@ const UiSettings: React.FC = () => {
       reset({
         whatsapp: latestUI.whatsapp || "",
         email: latestUI.email || "",
+        address: latestUI.address || "",
       });
       setLogoPreview(latestUI.logo?.url || "");
       setBannerPreview(latestUI.bannerImage?.url || "");
@@ -208,6 +211,7 @@ const UiSettings: React.FC = () => {
     reset({
       whatsapp: "",
       email: "",
+      address: "",
     });
     clearFile(logoPreview, setLogoFile, setLogoPreview);
     clearFile(bannerPreview, setBannerFile, setBannerPreview);
@@ -253,6 +257,7 @@ const UiSettings: React.FC = () => {
         bannerImage: bannerData,
         whatsapp: formData.whatsapp,
         email: formData.email,
+        address: formData.address,
         travelPhoto: travelData,
         explorePhoto: exploreData,
       };
@@ -449,14 +454,45 @@ const UiSettings: React.FC = () => {
                           }`}
                         />
                       </div>
-                      <p className={`font-medium ${themeClasses.textPrimary}`}>
-                        {latestUI.email}
-                      </p>
+                        <p className={`font-medium ${themeClasses.textPrimary}`}>
+                          {latestUI.email}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      className={`block text-sm font-medium ${themeClasses.textMuted} mb-2`}
+                    >
+                      Physical Address
+                    </label>
+                    <div
+                      className={`${
+                        theme === "light" ? "bg-gray-50" : "bg-gray-800/50"
+                      } p-4 rounded-xl`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`p-2 rounded-lg ${
+                            theme === "light" ? "bg-purple-100" : "bg-purple-900/30"
+                          }`}
+                        >
+                          <Globe
+                            className={`w-5 h-5 ${
+                              theme === "light"
+                                ? "text-purple-600"
+                                : "text-purple-400"
+                            }`}
+                          />
+                        </div>
+                        <p className={`font-medium ${themeClasses.textPrimary}`}>
+                          {latestUI.address}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
             {/* Image Previews */}
             <div>
@@ -737,14 +773,37 @@ const UiSettings: React.FC = () => {
                           className={`w-full p-3 border ${themeClasses.borderInput} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${themeClasses.inputBg} ${themeClasses.inputText}`}
                           disabled={isLoading}
                         />
-                        {errors.email && (
-                          <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
-                            <AlertCircle className="w-4 h-4" />
-                            {errors.email.message}
-                          </p>
-                        )}
+                          {errors.email && (
+                            <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {errors.email.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label
+                            className={`block text-sm font-medium ${themeClasses.textPrimary} mb-2`}
+                          >
+                            Physical Address <span className="text-red-500">*</span>
+                          </label>
+                          <textarea
+                            {...register("address", {
+                              required: "Address is required",
+                            })}
+                            rows={3}
+                            placeholder="123 Resort St, Paradise Island"
+                            className={`w-full p-3 border ${themeClasses.borderInput} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${themeClasses.inputBg} ${themeClasses.inputText}`}
+                            disabled={isLoading}
+                          />
+                          {errors.address && (
+                            <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {errors.address.message}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
                     {/* Right Column - Images */}
                     <div className="space-y-6">

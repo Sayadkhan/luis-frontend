@@ -1,8 +1,11 @@
+"use client";
 import React from "react";
 import Link from "next/link";
 import { ArrowRight, MapPin, Compass, Sun } from "lucide-react";
+import { useUi } from "@/providers/UiProvider";
 
 const Experience = () => {
+  const { uiData } = useUi();
   return (
     <div
       id="experiences"
@@ -82,15 +85,17 @@ const Experience = () => {
       {/* ================= FEATURE SECTIONS ================= */}
       <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20 space-y-20 sm:space-y-24">
         {/* Feature 1 */}
-        <div className="relative rounded-3xl overflow-hidden bg-white dark:bg-gray-800 shadow-2xl">
-          <div className="grid lg:grid-cols-2">
-            <div className="h-60 sm:h-80 lg:h-[600px] relative">
-              <img
-                src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent lg:hidden" />
-            </div>
+          <div className="relative rounded-3xl overflow-hidden bg-white dark:bg-gray-800 shadow-2xl">
+            <div className="grid lg:grid-cols-2">
+              <div className="h-60 sm:h-80 lg:h-[600px] relative">
+                <img
+                  src={uiData?.travelPhoto?.url || "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80"}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  alt="Travel"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent lg:hidden" />
+              </div>
+
 
             <div className="flex items-center p-6 sm:p-10 lg:p-20">
               <div className="space-y-4 sm:space-y-6 max-w-md">
@@ -133,12 +138,14 @@ const Experience = () => {
               </div>
             </div>
 
-            <div className="h-60 sm:h-80 lg:h-[600px] relative group order-1 lg:order-2">
-              <img
-                src="https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-            </div>
+              <div className="h-60 sm:h-80 lg:h-[600px] relative group order-1 lg:order-2">
+                <img
+                  src={uiData?.explorePhoto?.url || "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80"}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  alt="Explore"
+                />
+              </div>
+
           </div>
         </div>
       </section>

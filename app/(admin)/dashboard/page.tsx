@@ -6,6 +6,7 @@ import React from "react";
 import ClubDashboard from "@/app/_components/admin/club/Club";
 import BlogDashboard from "@/app/_components/admin/blog/Blog";
 import InquiriesDashboard from "@/app/_components/admin/inquiries/Inquiries";
+import Security from "@/app/_components/admin/security/Security";
 
 interface DashboardProps {
   selected: string;
@@ -19,6 +20,7 @@ export default function DashboardPage({ selected }: DashboardProps) {
     Blog: <BlogDashboard />,
     Inquiries: <InquiriesDashboard />,
     UiSettings: <UiSettings />,
+    Security: <Security />,
   };
 
   return (

@@ -9,6 +9,11 @@ import Image from "next/image";
 import logo from "@/public/img/logo.png";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/providers/ThemeProvider";
+import { useUi } from "@/providers/UiProvider";
+import { useAppDispatch, useAppSelector } from "@/redux/hook";
+import { useLogoutMutation } from "@/redux/features/auth/authApi";
+import { logout } from "@/redux/features/auth/authSlice";
+import toast from "react-hot-toast";
 
 const NavbarMenu = [
   { title: "Home", href: "/" },
@@ -37,18 +42,16 @@ const NavbarMenu = [
   { title: "Request Info", href: "/request-information", highlight: true },
 ];
 
-const ALWAYS_SOLID = [
-  "/why-timeshare",
-  "/vacation-club-brands",
-  "/became-a-member",
-  "/request-information",
-  "/blog",
-  "/experiences",
-];
+const ALWAYS_SOLID = ["/why-timeshare"];
 
 const Navbar = () => {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const { uiData } = useUi();
+  const dispatch = useAppDispatch();
+  const [logoutMutation] = useLogoutMutation();
+  const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
+  const user = useAppSelector((state) => state.auth.user);
 
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -79,49 +82,72 @@ const Navbar = () => {
     setOpenDropdown(openDropdown === title ? "" : title);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logoutMutation(undefined).unwrap();
+      dispatch(logout());
+      toast.success("Logged out successfully");
+      setOpen(false);
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout failed:", error);
+      dispatch(logout());
+      toast.success("Logged out successfully (session cleared)");
+      setOpen(false);
+      window.location.href = "/";
+    }
+  };
+
   return (
     <section>
       {/* Top announcement strip — homepage only */}
-      {pathname === "/" && (
+      {/* {pathname === "/" && (
         <div className="w-full py-4 text-white flex items-center justify-center bg-[#0a1628]">
           <p className="flex items-center gap-1 text-[14px]">
             Limited villas available for december <GoDotFill size={10} /> Book
             Early
           </p>
         </div>
-      )}
+      )} */}
 
       {/* Navbar */}
       <nav
         className={`
           z-50 w-full flex items-center justify-between text-white
           transition-[background-color,padding,box-shadow] duration-300 ease-in-out
-          ${isSolid
-            ? "fixed top-0 left-0 bg-black shadow-lg px-4 py-2"
-            : "fixed top-0 left-0 bg-transparent px-8 py-4"
+          ${
+            isSolid
+              ? "fixed top-0 left-0 bg-black shadow-lg px-4 py-2"
+              : "fixed top-0 left-0 bg-transparent px-8 py-4"
           }
         `}
       >
         {/* Logo */}
         <div className="flex items-center gap-2 text-2xl font-semibold">
-          <Image width={120} height={15} src={logo} alt="logo" />
+          <Image
+            width={120}
+            height={15}
+            src={uiData?.logo?.url || logo}
+            alt="logo"
+            className="object-contain"
+          />
         </div>
 
         {/* Desktop Menu */}
         <ul className="hidden md:flex items-center gap-6 text-[16px] font-medium">
           {NavbarMenu.map((item, i) => (
-              <li key={i} className="relative group">
-                <Link
-                  href={item.href}
-                  className={
-                    (item as any).highlight
-                      ? "flex items-center gap-1 cursor-pointer px-4 py-2 rounded-lg bg-[#C6AC5E] hover:bg-[#b09a50] text-white font-bold text-sm uppercase tracking-wide transition-colors"
-                      : "flex items-center gap-1 cursor-pointer hover:text-gray-300 transition-colors"
-                  }
-                >
-                  {item.title}
-                  {item.dropdown && <FiChevronDown size={16} />}
-                </Link>
+            <li key={i} className="relative group">
+              <Link
+                href={item.href}
+                className={
+                  (item as any).highlight
+                    ? "flex items-center gap-1 cursor-pointer px-4 py-2 rounded-lg bg-[#C6AC5E] hover:bg-[#b09a50] text-white font-bold text-sm uppercase tracking-wide transition-colors"
+                    : "flex items-center gap-1 cursor-pointer hover:text-gray-300 transition-colors"
+                }
+              >
+                {item.title}
+                {item.dropdown && <FiChevronDown size={16} />}
+              </Link>
 
               {item.dropdown && item.submenu && (
                 <ul className="absolute left-0 top-full mt-3 bg-white text-[#0a1628] shadow-xl rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 min-w-[200px] py-3">
@@ -140,7 +166,40 @@ const Navbar = () => {
             </li>
           ))}
 
+          {/* {isLoggedIn ? (
+              <>
+                {(user as any)?.role === "admin" && (
+                  <li>
+                    <Link
+                      href="/dashboard"
+                      className="flex items-center gap-1 cursor-pointer hover:text-gray-300 transition-colors"
+                    >
+                      Dashboard
+                    </Link>
+                  </li>
+                )}
+                <li>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-1 cursor-pointer hover:text-gray-300 transition-colors bg-transparent border-none p-0"
+                  >
+                    Logout
+                  </button>
+                </li>
+              </>
+            ) : (
+              <li>
+                <Link
+                  href="/login"
+                  className="flex items-center gap-1 cursor-pointer hover:text-gray-300 transition-colors"
+                >
+                  Login
+                </Link>
+              </li>
+            )} */}
+
           {/* Theme Toggle */}
+
           <li>
             <button
               onClick={toggleTheme}
@@ -185,12 +244,14 @@ const Navbar = () => {
                 onClick={() => item.dropdown && handleDropdownClick(item.title)}
               >
                 <Link
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className={(item as any).highlight ? "font-bold text-[#C6AC5E]" : ""}
-                  >
-                    {item.title}
-                  </Link>
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className={
+                    (item as any).highlight ? "font-bold text-[#C6AC5E]" : ""
+                  }
+                >
+                  {item.title}
+                </Link>
                 {item.dropdown && (
                   <FiChevronDown
                     className={`transition-transform duration-300 ${
@@ -217,6 +278,40 @@ const Navbar = () => {
               )}
             </li>
           ))}
+
+          {isLoggedIn ? (
+            <>
+              {(user as any)?.role === "admin" && (
+                <li>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setOpen(false)}
+                    className="hover:text-gray-300 transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                </li>
+              )}
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="hover:text-gray-300 transition-colors bg-transparent border-none p-0 text-left text-white"
+                >
+                  Logout
+                </button>
+              </li>
+            </>
+          ) : (
+            <li>
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="hover:text-gray-300 transition-colors"
+              >
+                Login
+              </Link>
+            </li>
+          )}
         </ul>
       </div>
 

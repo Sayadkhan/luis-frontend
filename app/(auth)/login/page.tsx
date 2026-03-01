@@ -1,37 +1,41 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-// import { useLoginMutation } from "@/redux/features/auth/authApi";
-// import { verifyToken } from "@/utils/verifyToken";
-// import { useAppDispatch } from "@/redux/hook";
 import { setUser } from "@/redux/features/auth/authSlice";
-// import { useGetMeQuery } from "@/redux/features/user/userApi";
-// import LoadingAnimation from "@/components/Loading/LoadingAnimation";
 import { useLoginMutation } from "@/redux/features/auth/authApi";
-import { useAppDispatch } from "@/redux/hook";
+import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import { useGetMeQuery } from "@/redux/features/user/userApi";
 import { verifyToken } from "@/utils/verifyToken";
+import toast from "react-hot-toast";
 
 type TLogin = {
   email: string;
   password: string;
 };
 
-const Login = () => {
+const LoginPage = () => {
   const router = useRouter();
+  const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
+  const user = useAppSelector((state) => state.auth.user);
 
   const [showPass, setShowPass] = useState(false);
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [login, { isLoading }] = useLoginMutation();
+  const [login] = useLoginMutation();
   const dispatch = useAppDispatch();
 
-  const { data, isLoading: getMeloading } = useGetMeQuery(undefined);
+  useEffect(() => {
+    if (isLoggedIn && (user as any)?.role === "admin") {
+      router.push("/dashboard");
+    }
+  }, [isLoggedIn, user, router]);
+
+  const { isLoading: getMeLoading } = useGetMeQuery(undefined);
 
   const {
     register,
@@ -49,36 +53,33 @@ const Login = () => {
     setError("");
 
     try {
-      //  API call here
       const res = await login(data).unwrap();
 
-      if (res.data.success && res.data.data.accessToken) {
-        const user = verifyToken(res.data.data.accessToken);
-        console.log(user);
+      if (res.success && res.data.accessToken) {
+        const user = verifyToken(res.data.accessToken);
         dispatch(
           setUser({
             user,
-            accessToken: res.data.data.accessToken,
+            accessToken: res.data.accessToken,
           })
         );
+        toast.success("Login successful!");
+        router.push("/dashboard");
+      } else {
+        setError("Login failed. Please check your credentials.");
+        toast.error("Login failed.");
       }
-
-      router.push("/dashboard");
-
-      // await loginAPI(data);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message);
+      setError(err?.data?.message || err.message || "Something went wrong");
+      toast.error(err?.data?.message || err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
-  if (getMeloading) {
+  if (getMeLoading) {
     return (
-      <div>
-        {" "}
-        {/* <LoadingAnimation /> */}
+      <div className="h-screen flex items-center justify-center">
         Loading...
       </div>
     );
@@ -224,9 +225,4 @@ const Login = () => {
   );
 };
 
-export default Login;
-export async function getServerSideProps() {
-  return {
-    props: {},
-  };
-}
+export default LoginPage;

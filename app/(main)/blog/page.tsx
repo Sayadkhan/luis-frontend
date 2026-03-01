@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Calendar, User, Tag, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Blog | Vacation Club",
+  title: "Blog | Endless Vacations Hub",
   description: "Read the latest news, travel tips, and stories from our vacation club community.",
 };
 
@@ -16,7 +16,10 @@ async function getBlogs() {
     });
     if (!res.ok) return [];
     const json = await res.json();
-    return json.data || [];
+    
+    // Handle both flat and double-wrapped data
+    const data = json.data?.data || json.data;
+    return Array.isArray(data) ? data : [];
   } catch {
     return [];
   }
@@ -47,26 +50,32 @@ export default async function BlogListPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {blogs.map((blog: any) => (
-              <article key={blog._id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-stone-100">
-                {blog.coverImage?.url && (
-                  <div className="overflow-hidden h-48">
+              <article key={blog._id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-stone-100 flex flex-col h-full">
+                <Link href={`/blog/${blog.slug}`} className="block overflow-hidden h-48">
+                  {blog.coverImage?.url ? (
                     <img
                       src={blog.coverImage.url}
                       alt={blog.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                  </div>
-                )}
-                <div className="p-6">
+                  ) : (
+                    <div className="w-full h-full bg-stone-100 flex items-center justify-center text-stone-300">
+                      No Image
+                    </div>
+                  )}
+                </Link>
+                <div className="p-6 flex-1 flex flex-col">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="bg-[#C6AC5E]/10 text-[#C6AC5E] text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
                       {blog.category}
                     </span>
                   </div>
 
-                  <h2 className="text-xl font-serif text-stone-900 mb-3 group-hover:text-[#C6AC5E] transition-colors line-clamp-2">
-                    {blog.title}
-                  </h2>
+                  <Link href={`/blog/${blog.slug}`} className="group/title">
+                    <h2 className="text-xl font-serif text-stone-900 mb-3 group-hover/title:text-[#C6AC5E] transition-colors line-clamp-2">
+                      {blog.title}
+                    </h2>
+                  </Link>
 
                   {blog.shortDescription && (
                     <p className="text-stone-500 text-sm leading-relaxed mb-4 line-clamp-3">
@@ -74,29 +83,31 @@ export default async function BlogListPage() {
                     </p>
                   )}
 
-                  <div className="flex items-center gap-4 text-xs text-stone-400 mb-4">
-                    <span className="flex items-center gap-1"><User size={12} /> {blog.author}</span>
-                    {blog.publishedAt && (
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} /> {new Date(blog.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </span>
-                    )}
-                  </div>
-
-                  {blog.tags?.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {blog.tags.slice(0, 3).map((tag: string) => (
-                        <span key={tag} className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">#{tag}</span>
-                      ))}
+                  <div className="mt-auto">
+                    <div className="flex items-center gap-4 text-xs text-stone-400 mb-4">
+                      <span className="flex items-center gap-1"><User size={12} /> {blog.author}</span>
+                      {blog.publishedAt && (
+                        <span className="flex items-center gap-1">
+                          <Calendar size={12} /> {new Date(blog.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </span>
+                      )}
                     </div>
-                  )}
 
-                  <Link
-                    href={`/blog/${blog.slug}`}
-                    className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-stone-900 hover:text-[#C6AC5E] transition-colors group/link"
-                  >
-                    Read More <ArrowRight size={14} className="group-hover/link:translate-x-1 transition-transform" />
-                  </Link>
+                    {blog.tags?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {blog.tags.slice(0, 3).map((tag: string) => (
+                          <span key={tag} className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">#{tag}</span>
+                        ))}
+                      </div>
+                    )}
+
+                    <Link
+                      href={`/blog/${blog.slug}`}
+                      className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-stone-900 hover:text-[#C6AC5E] transition-colors group/link"
+                    >
+                      Read More <ArrowRight size={14} className="group-hover/link:translate-x-1 transition-transform" />
+                    </Link>
+                  </div>
                 </div>
               </article>
             ))}

@@ -15,9 +15,11 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import logo from "@/public/img/logo.png";
+import { useUi } from "@/providers/UiProvider";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { uiData } = useUi();
 
   const instaImages = [
     "https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=150&q=80",
@@ -29,7 +31,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-darkBlue text-white pt-20 pb-10 relative overflow-hidden">
+    <footer className="bg-gray-100 dark:bg-[#0a1628] text-gray-900 dark:text-white pt-20 pb-10 relative overflow-hidden transition-colors duration-300">
       <div className="max-w-[1800px] mx-auto px-6 relative z-10">
         {/* CTA Banner */}
         <div className="bg-[#C6AC5E] rounded-3xl p-8 md:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 shadow-2xl shadow-[#C6AC5E]/20 mb-20">
@@ -46,7 +48,12 @@ const Footer = () => {
             <input
               type="email"
               placeholder="Enter your email address"
-              className="w-full py-4 pl-6 pr-36 rounded-full bg-black/20 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:bg-black/30 transition-all"
+              className="w-full py-4 pl-6 pr-36 rounded-full border transition-all focus:outline-none
+              bg-white dark:bg-black/20
+              border-gray-300 dark:border-white/20
+              text-gray-900 dark:text-white
+              placeholder-gray-500 dark:placeholder-white/60
+              focus:bg-gray-50 dark:focus:bg-black/30"
             />
             <button className="absolute right-1.5 top-1.5 bottom-1.5 bg-white text-[#C6AC5E] hover:bg-slate-100 font-bold px-6 rounded-full flex items-center gap-2 transition">
               Subscribe <Send size={16} />
@@ -55,11 +62,17 @@ const Footer = () => {
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-16 border-b border-white/10 pb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-16 border-b border-gray-300 dark:border-white/10 pb-12">
           {/* Brand & Contact */}
           <div className="lg:col-span-4 space-y-6">
-            <Image width={120} height={20} src={logo} alt="logo" />
-            <p className="text-white/80 leading-relaxed text-sm md:text-base">
+            <Image
+              width={120}
+              height={20}
+              src={uiData?.logo?.url || logo}
+              alt="logo"
+              className="object-contain"
+            />
+            <p className="text-gray-600 dark:text-white/80 leading-relaxed text-sm md:text-base">
               Crafting unforgettable journeys since 2010 — premium timeshares,
               luxury resorts & curated experiences around the globe.
             </p>
@@ -75,26 +88,26 @@ const Footer = () => {
               </div>
 
               <a
-                href="tel:888-204-0407"
+                href={`tel:${uiData?.whatsapp || "888-204-0407"}`}
                 className="flex items-center gap-3 hover:text-[#C6AC5E] transition"
               >
                 <Phone size={18} className="text-[#C6AC5E]" />
-                888-204-0407
+                {uiData?.whatsapp || "888-204-0407"}
               </a>
 
               <a
-                href="mailto:hello@endlessvacations.com"
+                href={`mailto:${uiData?.email || "hello@endlessvacations.com"}`}
                 className="flex items-center gap-3 hover:text-[#C6AC5E] transition"
               >
                 <Mail size={18} className="text-[#C6AC5E]" />
-                hello@endlessvacations.com
+                {uiData?.email || "hello@endlessvacations.com"}
               </a>
             </div>
           </div>
 
           {/* Destinations */}
           <div className="lg:col-span-2">
-            <h4 className="text-white font-bold uppercase tracking-wider mb-6 text-sm md:text-base lg:text-lg">
+            <h4 className="font-bold uppercase tracking-wider mb-6 text-sm md:text-base lg:text-lg">
               Destinations
             </h4>
             <ul className="space-y-4 text-xs md:text-sm">
@@ -106,7 +119,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link href="#" className="flex items-center gap-2">
-                  Switzerland{" "}
+                  Switzerland
                   <span className="text-[10px] bg-[#C6AC5E] px-1.5 py-0.5 rounded text-white font-bold">
                     HOT
                   </span>
@@ -123,7 +136,7 @@ const Footer = () => {
 
           {/* Company */}
           <div className="lg:col-span-2">
-            <h4 className="text-white font-bold uppercase tracking-wider mb-6 text-sm md:text-base lg:text-lg">
+            <h4 className="font-bold uppercase tracking-wider mb-6 text-sm md:text-base lg:text-lg">
               Company
             </h4>
             <ul className="space-y-4 text-xs md:text-sm">
@@ -145,16 +158,16 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Instagram Grid */}
+          {/* Instagram */}
           <div className="lg:col-span-4">
-            <h4 className="text-white font-bold uppercase tracking-wider mb-6 text-sm md:text-base lg:text-lg">
+            <h4 className="font-bold uppercase tracking-wider mb-6 text-sm md:text-base lg:text-lg">
               On The Gram
             </h4>
             <div className="grid grid-cols-3 gap-2">
               {instaImages.map((img, i) => (
                 <div
                   key={i}
-                  className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer bg-white/10"
+                  className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer bg-gray-200 dark:bg-white/10"
                 >
                   <img
                     src={img}
@@ -169,20 +182,20 @@ const Footer = () => {
             </div>
             <a
               href="#"
-              className="inline-flex items-center gap-2 text-sm text-[#C6AC5E] mt-4 hover:text-white transition"
+              className="inline-flex items-center gap-2 text-sm text-[#C6AC5E] mt-4 hover:text-gray-900 dark:hover:text-white transition"
             >
               View Profile <ArrowRight size={14} />
             </a>
           </div>
         </div>
 
-        {/* Footer Bottom */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/10 pt-8">
-          <p className="text-white/60 text-xs md:text-sm">
+        {/* Bottom */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6 border-t border-gray-300 dark:border-white/10 pt-8">
+          <p className="text-gray-500 dark:text-white/60 text-xs md:text-sm">
             © {currentYear} Endless Vacations Inc. All rights reserved.
           </p>
 
-          <div className="flex gap-6 text-xs md:text-sm text-white/80">
+          <div className="flex gap-6 text-xs md:text-sm">
             <Link href="#" className="hover:text-[#C6AC5E] transition-colors">
               Privacy Policy
             </Link>
@@ -194,13 +207,14 @@ const Footer = () => {
             </Link>
           </div>
 
-          {/* Social Icons */}
           <div className="flex gap-4">
             {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
               <a
                 key={i}
                 href="#"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#C6AC5E] hover:text-white transition"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition
+                bg-gray-200 dark:bg-white/10
+                hover:bg-[#C6AC5E] hover:text-white"
               >
                 <Icon size={18} />
               </a>

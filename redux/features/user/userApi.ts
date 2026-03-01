@@ -7,7 +7,25 @@ const userApi = baseApi.injectEndpoints({
         url: "/user/get-me",
       }),
     }),
+    requestEmailChange: builder.mutation({
+      query: (payload) => ({
+        method: "POST",
+        url: "/user/request-email-change",
+        body: payload,
+      }),
+    }),
+    verifyEmailChange: builder.mutation({
+      query: (payload) => ({
+        method: "POST",
+        url: "/user/verify-email-change",
+        body: payload,
+      }),
+    }),
   }),
 });
 
-export const { useGetMeQuery } = userApi;
+export const {
+  useGetMeQuery,
+  useRequestEmailChangeMutation,
+  useVerifyEmailChangeMutation,
+} = userApi;

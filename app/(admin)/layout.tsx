@@ -21,13 +21,13 @@ export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
-    useEffect(() => {
-      if (!isLoggedIn || (user as any)?.role !== "admin") {
-        router.push("/login");
-      } else {
-        setIsAuthChecking(false);
-      }
-    }, [isLoggedIn, user, router]);
+  useEffect(() => {
+    if (!isLoggedIn || (user as any)?.role !== "admin") {
+      router.push("/login");
+    } else {
+      setIsAuthChecking(false);
+    }
+  }, [isLoggedIn, user, router]);
 
   if (isAuthChecking) {
     return (
@@ -45,7 +45,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <SidePanel selected={selected} setSelected={setSelected} />
       </div>
       <MainContent>
-        <DashboardPage selected={selected} />
+        <DashboardPage selected={selected} setSelected={setSelected} />
       </MainContent>
     </div>
   );

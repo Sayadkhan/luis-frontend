@@ -1,20 +1,18 @@
+"use client";
+
+import React, { useState } from "react";
+
 import SpotAdmin from "@/app/_components/admin/spot/Spot";
 import Overview from "@/app/_components/admin/Overview";
 import UiSettings from "@/app/_components/admin/ui/UiSettings";
-
-import React from "react";
 import ClubDashboard from "@/app/_components/admin/club/Club";
 import BlogDashboard from "@/app/_components/admin/blog/Blog";
 import InquiriesDashboard from "@/app/_components/admin/inquiries/Inquiries";
 import Security from "@/app/_components/admin/security/Security";
 
-interface DashboardProps {
-  selected: string;
-}
-
-export default function DashboardPage({ selected }: DashboardProps) {
+export default function DashboardPage({ selected, setSelected }: any) {
   const components: Record<string, React.ReactNode> = {
-    Overview: <Overview />,
+    Overview: <Overview setSelected={setSelected} />,
     Clubs: <ClubDashboard />,
     Spots: <SpotAdmin />,
     Blog: <BlogDashboard />,
@@ -24,8 +22,6 @@ export default function DashboardPage({ selected }: DashboardProps) {
   };
 
   return (
-    <>
-      <div className="">{components[selected] ?? <Overview />}</div>
-    </>
+    <div>{components[selected] ?? <Overview setSelected={setSelected} />}</div>
   );
 }

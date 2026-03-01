@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef } from "react";
 import toast, { Toaster } from "react-hot-toast";
+
 import { useGetAllClubQuery } from "@/redux/features/club/clubApi";
 import { useGetAllBlogsQuery } from "@/redux/features/blog/blogApi";
 import { useGetAllInquiriesQuery } from "@/redux/features/blog/blogApi";
@@ -27,7 +28,9 @@ ChartJS.register(
   BarElement,
 );
 
-export default function Overview() {
+export default function Overview({ setSelected }: any) {
+  /* ================= QUERIES ================= */
+
   const { data: clubData, isLoading: clubsLoading } =
     useGetAllClubQuery(undefined);
 
@@ -39,17 +42,18 @@ export default function Overview() {
       pollingInterval: 30000,
     });
 
+  /* ================= DATA ================= */
+
   const clubs: any[] = clubData?.data?.data || clubData?.data || [];
   const blogs: any[] = blogData?.data?.data || blogData?.data || [];
-  const inquiries: any[] = inquiryData?.data || [];
+  const inquiries: any[] = inquiryData?.data || blogData?.data || [];
 
   const totalInquiries = inquiries.length;
   const newInquiries = inquiries.filter((i) => i.status === "new").length;
   const readInquiries = inquiries.filter((i) => i.status === "read").length;
 
-  /* ================================
-     Toast when new inquiry arrives
-  ==================================*/
+  /* ================= TOAST WHEN NEW INQUIRY ================= */
+
   const prevNewCount = useRef(0);
 
   useEffect(() => {
@@ -62,9 +66,8 @@ export default function Overview() {
     prevNewCount.current = newInquiries;
   }, [newInquiries, inquiries]);
 
-  /* ================================
-     Pie Chart Data
-  ==================================*/
+  /* ================= PIE CHART ================= */
+
   const pieData = {
     labels: ["Unread", "Read"],
     datasets: [
@@ -76,9 +79,8 @@ export default function Overview() {
     ],
   };
 
-  /* ================================
-     Monthly Data
-  ==================================*/
+  /* ================= MONTHLY DATA ================= */
+
   const monthlyData = useMemo(() => {
     const grouped: any = {};
 
@@ -105,9 +107,8 @@ export default function Overview() {
     ],
   };
 
-  /* ================================
-     Recent Inquiries
-  ==================================*/
+  /* ================= RECENT INQUIRIES ================= */
+
   const recentInquiries = [...inquiries]
     .sort(
       (a, b) =>
@@ -120,19 +121,35 @@ export default function Overview() {
       <Toaster position="top-right" />
 
       {/* ================= STATS ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <StatCard
+          title="Total Clubs"
+          value={clubsLoading ? "..." : clubs.length}
+          subtitle="All active clubs"
+          color="orange"
+        />
+
+        <StatCard
+          title="Total Blogs"
+          value={blogsLoading ? "..." : blogs.length}
+          subtitle="Published blogs"
+          color="blue"
+        />
+
         <StatCard
           title="Total Inquiries"
           value={inquiriesLoading ? "..." : totalInquiries}
           subtitle={`${newInquiries} unread`}
           color="purple"
         />
+
         <StatCard
           title="Unread"
           value={inquiriesLoading ? "..." : newInquiries}
           subtitle="Needs attention"
           color="red"
         />
+
         <StatCard
           title="Read"
           value={inquiriesLoading ? "..." : readInquiries}
@@ -141,36 +158,37 @@ export default function Overview() {
         />
       </div>
 
-      {/* ================= PIE CHART ================= */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700">
-        <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">
-          Inquiry Status Distribution
-        </h2>
-        <div className="max-w-xs">
-          <Pie data={pieData} />
+      <div className="grid grid-cols-2 gap-5">
+        {/* ================= PIE CHART ================= */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700">
+          <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">
+            Inquiry Status Distribution
+          </h2>
+          <div className="max-w-xs">
+            <Pie data={pieData} />
+          </div>
+        </div>
+
+        {/* ================= MONTHLY BAR ================= */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700">
+          <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">
+            Monthly Inquiries
+          </h2>
+          <Bar data={barData} />
         </div>
       </div>
-
-      {/* ================= BAR CHART ================= */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700">
-        <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">
-          Monthly Inquiries
-        </h2>
-        <Bar data={barData} />
-      </div>
-
-      {/* ================= RECENT LIST ================= */}
+      {/* ================= RECENT ================= */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
         <div className="flex justify-between items-center p-5 border-b border-gray-100 dark:border-gray-700">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
             Recent Inquiries
           </h2>
-          <a
-            href="/dashboard/inquiries"
+          <button
+            onClick={() => setSelected("Inquiries")}
             className="text-sm text-blue-600 hover:underline font-semibold"
           >
             View All
-          </a>
+          </button>
         </div>
 
         <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -208,9 +226,7 @@ export default function Overview() {
   );
 }
 
-/* ================================
-   Reusable Stat Card Component
-==================================*/
+/* ================= STAT CARD ================= */
 function StatCard({
   title,
   value,
@@ -226,6 +242,8 @@ function StatCard({
     red: "text-red-500",
     green: "text-green-500",
     purple: "text-purple-500",
+    blue: "text-blue-500",
+    orange: "text-orange-500",
   };
 
   return (

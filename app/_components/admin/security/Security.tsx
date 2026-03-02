@@ -20,7 +20,7 @@ import {
   ArrowRight,
   RefreshCw,
 } from "lucide-react";
-import { useAppDispatch } from "@/redux/hook";
+import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import { logout } from "@/redux/features/auth/authSlice";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -39,6 +39,7 @@ const Security: React.FC = () => {
 
   const [emailStep, setEmailStep] = useState<"request" | "verify">("request");
   const [pendingEmail, setPendingEmail] = useState("");
+  const user = useAppSelector((state) => state.auth.user);
 
   const route = useRouter();
 
@@ -93,7 +94,7 @@ const Security: React.FC = () => {
       }).unwrap();
       setPendingEmail(data.newEmail);
       setEmailStep("verify");
-      alert("Verification code sent to your new email!");
+      alert("Verification code sent to your previous email!");
     } catch (err: any) {
       alert(err.data?.message || "Failed to request email change");
     }
@@ -313,9 +314,8 @@ const Security: React.FC = () => {
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl flex items-start gap-3 border border-blue-100 dark:border-blue-800 mb-4">
                 <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5" />
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  We've sent a 6-digit verification code to{" "}
-                  <b>{pendingEmail}</b>. Please enter it below to confirm your
-                  new email.
+                  We've sent a 6-digit verification code to <b>{user?.email}</b>
+                  . Please enter it below to confirm your new email.
                 </p>
               </div>
               <div>

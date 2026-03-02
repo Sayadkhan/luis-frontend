@@ -23,7 +23,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/providers/ThemeProvider";
 import ThemeToggle from "../shared/ThemeToggle";
 import { useGetAllInquiriesQuery } from "@/redux/features/blog/blogApi";
-import { useAppDispatch } from "@/redux/hook";
+import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import { useLogoutMutation } from "@/redux/features/auth/authApi";
 import { logout } from "@/redux/features/auth/authSlice";
 import { useRouter } from "next/navigation";
@@ -56,6 +56,9 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
+  const user = useAppSelector((state) => state.auth.user);
 
   // Theme-based styling functions
   const getPanelBg = () =>
@@ -244,7 +247,8 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
                     Admin User
                   </h3>
                   <p className={`text-xs ${getTextColor("muted")}`}>
-                    Super Admin
+                    {(isLoggedIn && user?.email) ||
+                      "mkt.luisalvarado@gmail.com"}
                   </p>
                 </div>
               </div>
@@ -365,7 +369,9 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
                         console.error("Logout failed:", error);
                         // Fallback: still clear Redux state and redirect
                         dispatch(logout());
-                        toast.success("Logged out successfully (session cleared)");
+                        toast.success(
+                          "Logged out successfully (session cleared)",
+                        );
                         window.location.href = "/";
                       }
                     }
@@ -407,7 +413,7 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
           </div>
 
           {/* FOOTER */}
-          {open && (
+          {/* {open && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -420,7 +426,7 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
                 All rights reserved
               </p>
             </motion.div>
-          )}
+          )} */}
         </div>
       </motion.div>
     </>

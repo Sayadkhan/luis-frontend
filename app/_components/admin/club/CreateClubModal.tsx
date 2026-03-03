@@ -61,8 +61,8 @@ interface ClubForm {
   }[];
   clubLogo: ImageItem[];
   locationImages: {
-    title: string;           // internal/branch name e.g. "Dhaka Branch"
-    locationName?: string;   // custom display name — falls back to clubTitle if empty
+    title: string;
+    locationName?: string;
     description?: string;
     images: ImageItem[];
     video?: LocationVideo | null;
@@ -124,10 +124,14 @@ export function CreateClubModal({
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingLocation, setUploadingLocation] = useState<number | null>(null);
+  const [uploadingLocation, setUploadingLocation] = useState<number | null>(
+    null,
+  );
   const [uploadingVideo, setUploadingVideo] = useState<number | null>(null);
   // per-location video mode: "upload" | "embed"
-  const [videoMode, setVideoMode] = useState<Record<number, "upload" | "embed">>({});
+  const [videoMode, setVideoMode] = useState<
+    Record<number, "upload" | "embed">
+  >({});
 
   const logoRef = useRef<HTMLInputElement>(null);
   const { uploadToCloudinary } = useCloudinaryUpload();
@@ -164,12 +168,17 @@ export function CreateClubModal({
     });
 
   const socialLinks = useFieldArray({ control, name: "socialLinks" });
-  const locations = useFieldArray({ control, name: "locationImages" });
+  const locations = useFieldArray<ClubForm, "locationImages">({
+    control,
+    name: "locationImages",
+  });
+
+  console.log(locations);
   const benefits = useFieldArray({ control, name: "benefits" });
   const tiers = useFieldArray({ control, name: "membershipTiers" });
 
   const clubLogo = watch("clubLogo");
-  const locationValues = watch("locationImages");
+  const locationValues = watch("locationImages") ?? "";
 
   const nextStep = async () => {
     const fieldsToValidate: Record<number, string[]> = {
@@ -247,7 +256,11 @@ export function CreateClubModal({
     try {
       const uploaded = await uploadToCloudinary(files[0]);
       const updated = [...watch("locationImages")];
-      updated[index].video = { type: "upload", url: uploaded.url, publicId: uploaded.publicId };
+      updated[index].video = {
+        type: "upload",
+        url: uploaded.url,
+        publicId: uploaded.publicId,
+      };
       setValue("locationImages", updated);
       toast.success("Video uploaded");
     } catch {
@@ -259,7 +272,9 @@ export function CreateClubModal({
 
   const setEmbedVideo = (index: number, url: string) => {
     const updated = [...watch("locationImages")];
-    updated[index].video = url.trim() ? { type: "embed", url: url.trim() } : null;
+    updated[index].video = url.trim()
+      ? { type: "embed", url: url.trim() }
+      : null;
     setValue("locationImages", updated);
   };
 
@@ -278,7 +293,7 @@ export function CreateClubModal({
 
     // Strip out incomplete social links and benefits before submitting
     data.socialLinks = data.socialLinks.filter(
-      (s) => s.platform.trim() && s.url.trim()
+      (s) => s.platform.trim() && s.url.trim(),
     );
     data.benefits = data.benefits.filter((b) => b.title.trim());
 
@@ -584,264 +599,406 @@ export function CreateClubModal({
                       </div>
                     )}
 
-                      {currentStep === 2 && (
-                        <div className="space-y-6">
-                          {/* ── Club Logo ── */}
-                          <div>
-                            <Label className="text-sm font-semibold mb-3 block text-gray-700 dark:text-gray-300">
-                              Official Club Logo <span className="text-red-500">*</span>
-                            </Label>
-                            <div
-                              onClick={() => !uploadingLogo && logoRef.current?.click()}
-                              className={cn(
-                                "relative group border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300",
-                                uploadingLogo
-                                  ? "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 cursor-wait"
-                                  : "border-gray-300 dark:border-gray-600 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20",
-                              )}
-                            >
-                              {uploadingLogo ? (
-                                <div className="flex flex-col items-center gap-2 py-2">
-                                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                                  <p className="text-sm font-medium animate-pulse text-gray-600 dark:text-gray-400">Processing...</p>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center py-2">
-                                  <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                    <Upload className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-                                  </div>
-                                  <h3 className="font-semibold text-gray-900 dark:text-white">Upload Logo</h3>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">JPG, PNG (Max 5MB)</p>
-                                </div>
-                              )}
-                              <input ref={logoRef} hidden type="file" accept="image/*" multiple
-                                onChange={(e) => handleLogoUpload(e.target.files)} />
-                            </div>
-
-                            {clubLogo.length > 0 && (
-                              <div className="grid grid-cols-4 gap-3 mt-4">
-                                {clubLogo.map((img, i) => (
-                                  <div key={i} className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
-                                    <img src={img.url} alt="" className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                      <Button type="button" variant="destructive" size="icon" className="h-7 w-7 rounded-full" onClick={() => removeLogoImage(i)}>
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+                    {currentStep === 2 && (
+                      <div className="space-y-6">
+                        {/* ── Club Logo ── */}
+                        <div>
+                          <Label className="text-sm font-semibold mb-3 block text-gray-700 dark:text-gray-300">
+                            Official Club Logo{" "}
+                            <span className="text-red-500">*</span>
+                          </Label>
+                          <div
+                            onClick={() =>
+                              !uploadingLogo && logoRef.current?.click()
+                            }
+                            className={cn(
+                              "relative group border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300",
+                              uploadingLogo
+                                ? "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 cursor-wait"
+                                : "border-gray-300 dark:border-gray-600 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20",
                             )}
-                          </div>
-
-                          {/* ── Location Gallery ── */}
-                          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center justify-between mb-1">
-                              <div>
-                                <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                  Club Locations
-                                </Label>
-                                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-                                  Each location has its own name, gallery and optional video.
+                          >
+                            {uploadingLogo ? (
+                              <div className="flex flex-col items-center gap-2 py-2">
+                                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                                <p className="text-sm font-medium animate-pulse text-gray-600 dark:text-gray-400">
+                                  Processing...
                                 </p>
                               </div>
-                              <Button
-                                type="button" variant="outline" size="sm"
-                                className="h-8 rounded-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                onClick={() => locations.append({ title: "", locationName: "", description: "", images: [], video: null })}
-                              >
-                                <Plus className="w-3.5 h-3.5 mr-1.5" />
-                                Add Location
-                              </Button>
-                            </div>
-
-                            {locations.fields.length === 0 && (
-                              <div className="mt-4 flex flex-col items-center justify-center py-8 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 gap-2">
-                                <MapPin className="w-8 h-8" />
-                                <p className="text-sm font-medium">No locations yet</p>
-                                <p className="text-xs">Click "Add Location" to get started.</p>
+                            ) : (
+                              <div className="flex flex-col items-center py-2">
+                                <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                  <Upload className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                                </div>
+                                <h3 className="font-semibold text-gray-900 dark:text-white">
+                                  Upload Logo
+                                </h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  JPG, PNG (Max 5MB)
+                                </p>
                               </div>
                             )}
+                            <input
+                              ref={logoRef}
+                              hidden
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={(e) => handleLogoUpload(e.target.files)}
+                            />
+                          </div>
 
-                            <div className="space-y-5 mt-4">
-                              {locations.fields.map((field, i) => {
-                                const locVideo = locationValues?.[i]?.video;
-                                const mode = videoMode[i] ?? "upload";
-                                return (
-                                  <motion.div
-                                    key={field.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="relative rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 overflow-hidden"
-                                  >
-                                    {/* Location header bar */}
-                                    <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-                                      <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
-                                        <MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                          {clubLogo.length > 0 && (
+                            <div className="grid grid-cols-4 gap-3 mt-4">
+                              {clubLogo.map((img, i) => (
+                                <div
+                                  key={i}
+                                  className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
+                                >
+                                  <img
+                                    src={img.url}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="icon"
+                                      className="h-7 w-7 rounded-full"
+                                      onClick={() => removeLogoImage(i)}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── Location Gallery ── */}
+                        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center justify-between mb-1">
+                            <div>
+                              <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                Club Locations
+                              </Label>
+                              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                                Each location has its own name, gallery and
+                                optional video.
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 rounded-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                              onClick={() =>
+                                locations.append({
+                                  title: "",
+                                  locationName: "",
+                                  description: "",
+                                  images: [],
+                                  video: null,
+                                })
+                              }
+                            >
+                              <Plus className="w-3.5 h-3.5 mr-1.5" />
+                              Add Location
+                            </Button>
+                          </div>
+
+                          {locations.fields.length === 0 && (
+                            <div className="mt-4 flex flex-col items-center justify-center py-8 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 gap-2">
+                              <MapPin className="w-8 h-8" />
+                              <p className="text-sm font-medium">
+                                No locations yet
+                              </p>
+                              <p className="text-xs">
+                                Click "Add Location" to get started.
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="space-y-5 mt-4">
+                            {locations.fields.map((field, i) => {
+                              const locVideo = locationValues?.[i]?.video;
+                              console.log("Location", i, "Video:", locVideo);
+                              const mode = videoMode[i] ?? "upload";
+                              return (
+                                <motion.div
+                                  key={field.id}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="relative rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 overflow-hidden"
+                                >
+                                  {/* Location header bar */}
+                                  <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                                    <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+                                      <MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                      Location {i + 1}
+                                    </span>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="ml-auto h-7 w-7 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
+                                      onClick={() => locations.remove(i)}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </div>
+
+                                  <div className="p-4 space-y-4">
+                                    {/* Name fields */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div className="space-y-1.5">
+                                        <Label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                          Branch / Internal Name{" "}
+                                          <span className="text-red-500">
+                                            *
+                                          </span>
+                                        </Label>
+                                        <Input
+                                          {...register(
+                                            `locationImages.${i}.title`,
+                                          )}
+                                          placeholder="e.g. Dhaka Branch"
+                                          className="h-9 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                                        />
                                       </div>
-                                      <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                        Location {i + 1}
-                                      </span>
-                                      <Button
-                                        type="button" variant="ghost" size="icon"
-                                        className="ml-auto h-7 w-7 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
-                                        onClick={() => locations.remove(i)}
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </Button>
+                                      <div className="space-y-1.5">
+                                        <Label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                          Display Name{" "}
+                                          <span className="text-[10px] font-normal normal-case">
+                                            (optional — falls back to club name)
+                                          </span>
+                                        </Label>
+                                        <Input
+                                          {...register(
+                                            `locationImages.${i}.locationName`,
+                                          )}
+                                          placeholder={`e.g. ${watch("clubTitle") || "Club Name"} – Dhaka`}
+                                          className="h-9 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                                        />
+                                      </div>
                                     </div>
 
-                                    <div className="p-4 space-y-4">
-                                      {/* Name fields */}
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div className="space-y-1.5">
-                                          <Label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                            Branch / Internal Name <span className="text-red-500">*</span>
-                                          </Label>
-                                          <Input
-                                            {...register(`locationImages.${i}.title`)}
-                                            placeholder="e.g. Dhaka Branch"
-                                            className="h-9 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                                          />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                          <Label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                            Display Name <span className="text-[10px] font-normal normal-case">(optional — falls back to club name)</span>
-                                          </Label>
-                                          <Input
-                                            {...register(`locationImages.${i}.locationName`)}
-                                            placeholder={`e.g. ${watch("clubTitle") || "Club Name"} – Dhaka`}
-                                            className="h-9 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                                          />
-                                        </div>
+                                    <Input
+                                      {...register(
+                                        `locationImages.${i}.description`,
+                                      )}
+                                      placeholder="Brief location highlight (shown in hero subtitle)..."
+                                      className="h-9 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                                    />
+
+                                    {/* Image upload */}
+                                    <div className="space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <Label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+                                          <ImageIcon className="w-3.5 h-3.5" />{" "}
+                                          Image Gallery
+                                        </Label>
+                                        <Button
+                                          type="button"
+                                          variant="secondary"
+                                          size="sm"
+                                          className="rounded-full h-7 px-3 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                          disabled={uploadingLocation === i}
+                                          onClick={() =>
+                                            document
+                                              .getElementById(`loc-upload-${i}`)
+                                              ?.click()
+                                          }
+                                        >
+                                          {uploadingLocation === i ? (
+                                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                          ) : (
+                                            <Upload className="w-3 h-3 mr-1" />
+                                          )}
+                                          Upload Images
+                                        </Button>
+                                        <input
+                                          id={`loc-upload-${i}`}
+                                          hidden
+                                          type="file"
+                                          accept="image/*"
+                                          multiple
+                                          onChange={(e) =>
+                                            handleLocationImageUpload(
+                                              e.target.files,
+                                              i,
+                                            )
+                                          }
+                                        />
                                       </div>
 
-                                      <Input
-                                        {...register(`locationImages.${i}.description`)}
-                                        placeholder="Brief location highlight (shown in hero subtitle)..."
-                                        className="h-9 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                                      />
-
-                                      {/* Image upload */}
-                                      <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                          <Label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                                            <ImageIcon className="w-3.5 h-3.5" /> Image Gallery
-                                          </Label>
-                                          <Button
-                                            type="button" variant="secondary" size="sm"
-                                            className="rounded-full h-7 px-3 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                                            disabled={uploadingLocation === i}
-                                            onClick={() => document.getElementById(`loc-upload-${i}`)?.click()}
-                                          >
-                                            {uploadingLocation === i
-                                              ? <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                              : <Upload className="w-3 h-3 mr-1" />}
-                                            Upload Images
-                                          </Button>
-                                          <input id={`loc-upload-${i}`} hidden type="file" accept="image/*" multiple
-                                            onChange={(e) => handleLocationImageUpload(e.target.files, i)} />
-                                        </div>
-
-                                        {locationValues?.[i]?.images?.length > 0 ? (
-                                          <div className="grid grid-cols-4 gap-2">
-                                            {locationValues[i].images.map((img, idx) => (
-                                              <div key={idx} className="relative group/img aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
-                                                <img src={img.url} alt="" className="w-full h-full object-cover" />
-                                                <button type="button" onClick={() => removeLocationImage(i, idx)}
-                                                  className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-red-500">
+                                      {locationValues?.[i]?.images?.length >
+                                      0 ? (
+                                        <div className="grid grid-cols-4 gap-2">
+                                          {locationValues[i].images.map(
+                                            (img, idx) => (
+                                              <div
+                                                key={idx}
+                                                className="relative group/img aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm"
+                                              >
+                                                <img
+                                                  src={img.url}
+                                                  alt=""
+                                                  className="w-full h-full object-cover"
+                                                />
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    removeLocationImage(i, idx)
+                                                  }
+                                                  className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-red-500"
+                                                >
                                                   <X className="w-2.5 h-2.5" />
                                                 </button>
                                               </div>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <div className="flex items-center justify-center h-16 rounded-lg border border-dashed border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 text-xs">
-                                            No images yet — click Upload Images
-                                          </div>
-                                        )}
-                                      </div>
+                                            ),
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center justify-center h-16 rounded-lg border border-dashed border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 text-xs">
+                                          No images yet — click Upload Images
+                                        </div>
+                                      )}
+                                    </div>
 
-                                      {/* Video section */}
-                                      <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                                        <div className="flex items-center justify-between">
-                                          <Label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                                            <Video className="w-3.5 h-3.5" /> Video (optional)
-                                          </Label>
-                                          {/* Toggle upload vs embed */}
-                                          <div className="flex gap-1 bg-gray-200 dark:bg-gray-700 rounded-full p-0.5">
-                                            {(["upload", "embed"] as const).map((m) => (
+                                    {/* Video section */}
+                                    <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                                      <div className="flex items-center justify-between">
+                                        <Label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+                                          <Video className="w-3.5 h-3.5" />{" "}
+                                          Video (optional)
+                                        </Label>
+                                        {/* Toggle upload vs embed */}
+                                        <div className="flex gap-1 bg-gray-200 dark:bg-gray-700 rounded-full p-0.5">
+                                          {(["upload", "embed"] as const).map(
+                                            (m) => (
                                               <button
-                                                key={m} type="button"
-                                                onClick={() => setVideoMode((prev) => ({ ...prev, [i]: m }))}
+                                                key={m}
+                                                type="button"
+                                                onClick={() =>
+                                                  setVideoMode((prev) => ({
+                                                    ...prev,
+                                                    [i]: m,
+                                                  }))
+                                                }
                                                 className={cn(
                                                   "flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold transition-all",
                                                   mode === m
                                                     ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow"
-                                                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                                                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300",
                                                 )}
                                               >
-                                                {m === "upload" ? <Upload className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
-                                                {m === "upload" ? "Upload" : "Embed"}
+                                                {m === "upload" ? (
+                                                  <Upload className="w-3 h-3" />
+                                                ) : (
+                                                  <Globe className="w-3 h-3" />
+                                                )}
+                                                {m === "upload"
+                                                  ? "Upload"
+                                                  : "Embed"}
                                               </button>
-                                            ))}
-                                          </div>
+                                            ),
+                                          )}
                                         </div>
-
-                                        {locVideo ? (
-                                          /* Video preview */
-                                          <div className="relative rounded-lg overflow-hidden bg-black aspect-video group/vid">
-                                            {locVideo.type === "upload" ? (
-                                              <video src={locVideo.url} controls className="w-full h-full object-contain" />
-                                            ) : (
-                                              <iframe
-                                                src={locVideo.url.replace("watch?v=", "embed/").replace("youtu.be/", "www.youtube.com/embed/")}
-                                                className="w-full h-full"
-                                                allow="autoplay; encrypted-media"
-                                                allowFullScreen
-                                              />
-                                            )}
-                                            <button type="button" onClick={() => removeVideo(i)}
-                                              className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover/vid:opacity-100 transition-opacity hover:bg-red-600">
-                                              <X className="w-3.5 h-3.5" />
-                                            </button>
-                                          </div>
-                                        ) : mode === "upload" ? (
-                                          <div
-                                            onClick={() => !uploadingVideo && document.getElementById(`vid-upload-${i}`)?.click()}
-                                            className={cn(
-                                              "flex items-center justify-center h-16 rounded-lg border-2 border-dashed cursor-pointer transition-all",
-                                              uploadingVideo === i
-                                                ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20 cursor-wait"
-                                                : "border-gray-200 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                                            )}
-                                          >
-                                            {uploadingVideo === i
-                                              ? <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                                              : <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5"><Upload className="w-4 h-4" /> Click to upload a video file</span>}
-                                            <input id={`vid-upload-${i}`} hidden type="file" accept="video/*"
-                                              onChange={(e) => handleVideoUpload(e.target.files, i)} />
-                                          </div>
-                                        ) : (
-                                          <div className="flex items-center gap-2">
-                                            <LinkIcon className="w-4 h-4 shrink-0 text-gray-400 dark:text-gray-500" />
-                                            <Input
-                                              placeholder="Paste YouTube or Vimeo URL..."
-                                              className="h-9 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                                              onBlur={(e) => setEmbedVideo(i, e.target.value)}
-                                              defaultValue={locVideo?.url ?? ""}
-                                            />
-                                          </div>
-                                        )}
                                       </div>
+
+                                      {locVideo ? (
+                                        /* Video preview */
+                                        <div className="relative rounded-lg overflow-hidden bg-black aspect-video group/vid">
+                                          {locVideo.type === "upload" ? (
+                                            <video
+                                              src={locVideo.url}
+                                              controls
+                                              className="w-full h-full object-contain"
+                                            />
+                                          ) : (
+                                            <iframe
+                                              src={locVideo.url
+                                                .replace("watch?v=", "embed/")
+                                                .replace(
+                                                  "youtu.be/",
+                                                  "www.youtube.com/embed/",
+                                                )}
+                                              className="w-full h-full"
+                                              allow="autoplay; encrypted-media"
+                                              allowFullScreen
+                                            />
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => removeVideo(i)}
+                                            className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover/vid:opacity-100 transition-opacity hover:bg-red-600"
+                                          >
+                                            <X className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      ) : mode === "upload" ? (
+                                        <div
+                                          onClick={() =>
+                                            !uploadingVideo &&
+                                            document
+                                              .getElementById(`vid-upload-${i}`)
+                                              ?.click()
+                                          }
+                                          className={cn(
+                                            "flex items-center justify-center h-16 rounded-lg border-2 border-dashed cursor-pointer transition-all",
+                                            uploadingVideo === i
+                                              ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20 cursor-wait"
+                                              : "border-gray-200 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
+                                          )}
+                                        >
+                                          {uploadingVideo === i ? (
+                                            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                                          ) : (
+                                            <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+                                              <Upload className="w-4 h-4" />{" "}
+                                              Click to upload a video file
+                                            </span>
+                                          )}
+                                          <input
+                                            id={`vid-upload-${i}`}
+                                            hidden
+                                            type="file"
+                                            accept="video/*"
+                                            onChange={(e) =>
+                                              handleVideoUpload(
+                                                e.target.files,
+                                                i,
+                                              )
+                                            }
+                                          />
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center gap-2">
+                                          <LinkIcon className="w-4 h-4 shrink-0 text-gray-400 dark:text-gray-500" />
+                                          <Input
+                                            placeholder="Paste YouTube or Vimeo URL..."
+                                            className="h-9 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                                            onBlur={(e) =>
+                                              setEmbedVideo(i, e.target.value)
+                                            }
+                                            defaultValue={locVideo ?? ""}
+                                          />
+                                        </div>
+                                      )}
                                     </div>
-                                  </motion.div>
-                                );
-                              })}
-                            </div>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
                           </div>
                         </div>
-                      )}
+                      </div>
+                    )}
 
                     {currentStep === 3 && (
                       <div className="space-y-5">

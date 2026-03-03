@@ -314,8 +314,9 @@ const Security: React.FC = () => {
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl flex items-start gap-3 border border-blue-100 dark:border-blue-800 mb-4">
                 <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5" />
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  We've sent a 6-digit verification code to <b>{user?.email}</b>
-                  . Please enter it below to confirm your new email.
+                  We've sent a 6-digit verification code to{" "}
+                  <b>{(user as any)?.email}</b>. Please enter it below to
+                  confirm your new email.
                 </p>
               </div>
               <div>

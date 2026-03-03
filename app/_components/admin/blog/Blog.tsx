@@ -57,7 +57,8 @@ function generateSlug(title: string) {
 
 const inputCls =
   "w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all";
-const labelCls = "text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider";
+const labelCls =
+  "text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block uppercase tracking-wider";
 
 export default function BlogDashboard() {
   const [showForm, setShowForm] = useState(false);
@@ -74,19 +75,20 @@ export default function BlogDashboard() {
   const responseData = data?.data?.data || data?.data;
   const blogs: any[] = Array.isArray(responseData) ? responseData : [];
 
-  const { register, control, handleSubmit, setValue, watch, reset } = useForm<BlogForm>({
-    defaultValues: {
-      title: "",
-      slug: "",
-      shortDescription: "",
-      content: "",
-      author: "Admin",
-      category: "General",
-      tags: "",
-      status: "draft",
-      coverImage: undefined,
-    },
-  });
+  const { register, control, handleSubmit, setValue, watch, reset } =
+    useForm<BlogForm>({
+      defaultValues: {
+        title: "",
+        slug: "",
+        shortDescription: "",
+        content: "",
+        author: "Admin",
+        category: "General",
+        tags: "",
+        status: "draft",
+        coverImage: undefined,
+      },
+    });
 
   const coverImage = watch("coverImage");
   const title = watch("title");
@@ -131,12 +133,19 @@ export default function BlogDashboard() {
       handleCloseForm();
       refetch();
     } catch (err: any) {
-      toast.error(err?.data?.message || "Something went wrong. Please check your inputs.");
+      toast.error(
+        err?.data?.message || "Something went wrong. Please check your inputs.",
+      );
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this blog post? This action cannot be undone.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this blog post? This action cannot be undone.",
+      )
+    )
+      return;
     try {
       await deleteBlog(id).unwrap();
       toast.success("Post deleted permanently.");
@@ -155,7 +164,7 @@ export default function BlogDashboard() {
       content: blog.content || "",
       author: blog.author || "Admin",
       category: blog.category || "General",
-      tags: Array.isArray(blog.tags) ? blog.tags.join(", ") : (blog.tags || ""),
+      tags: Array.isArray(blog.tags) ? blog.tags.join(", ") : blog.tags || "",
       status: blog.status || "draft",
       coverImage: blog.coverImage,
     });
@@ -172,11 +181,11 @@ export default function BlogDashboard() {
     return (
       <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
         <Toaster position="top-right" />
-        
+
         {/* WORDPRESS STYLE TOPBAR */}
         <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-10">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={handleCloseForm}
               className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
@@ -186,15 +195,15 @@ export default function BlogDashboard() {
               {editId ? "Edit Post" : "Add New Post"}
             </h2>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setValue("status", "draft")}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                watch("status") === "draft" 
-                ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white" 
-                : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                watch("status") === "draft"
+                  ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white"
+                  : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               Save Draft
@@ -233,7 +242,7 @@ export default function BlogDashboard() {
                   rules={{ required: true }}
                   render={({ field }) => (
                     <RichTextEditor
-                      value={field.value}
+                      value={field.value ?? ""}
                       onChange={field.onChange}
                       placeholder="Start writing your masterpiece..."
                       minHeight="500px"
@@ -265,21 +274,32 @@ export default function BlogDashboard() {
                 <div>
                   <label className={labelCls}>Permalink / Slug</label>
                   <div className="relative">
-                    <input {...register("slug", { required: true })} className={inputCls} />
-                    <button 
-                      type="button" 
-                      onClick={() => setValue("slug", generateSlug(watch("title")))}
+                    <input
+                      {...register("slug", { required: true })}
+                      className={inputCls}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setValue("slug", generateSlug(watch("title")))
+                      }
                       className="absolute right-2 top-1.5 p-1 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded text-xs font-medium"
                     >
                       Reset
                     </button>
                   </div>
-                  <p className="mt-1 text-[10px] text-gray-400">/blog/{watch("slug")}</p>
+                  <p className="mt-1 text-[10px] text-gray-400">
+                    /blog/{watch("slug")}
+                  </p>
                 </div>
-                
+
                 <div>
                   <label className={labelCls}>Author</label>
-                  <input {...register("author")} className={inputCls} placeholder="Admin" />
+                  <input
+                    {...register("author")}
+                    className={inputCls}
+                    placeholder="Admin"
+                  />
                 </div>
               </section>
 
@@ -299,8 +319,14 @@ export default function BlogDashboard() {
 
                 <div>
                   <label className={labelCls}>Tags</label>
-                  <input {...register("tags")} className={inputCls} placeholder="vacation, luxury, travel" />
-                  <p className="mt-1 text-[10px] text-gray-400">Separate with commas</p>
+                  <input
+                    {...register("tags")}
+                    className={inputCls}
+                    placeholder="vacation, luxury, travel"
+                  />
+                  <p className="mt-1 text-[10px] text-gray-400">
+                    Separate with commas
+                  </p>
                 </div>
               </section>
 
@@ -309,10 +335,14 @@ export default function BlogDashboard() {
                 <label className={labelCls}>Featured Image</label>
                 {coverImage?.url ? (
                   <div className="group relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                    <img src={coverImage.url} alt="Cover" className="w-full h-48 object-cover" />
+                    <img
+                      src={coverImage.url}
+                      alt="Cover"
+                      className="w-full h-48 object-cover"
+                    />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setValue("coverImage", undefined)}
                         className="p-2 bg-red-500 text-white rounded-full hover:scale-110 transition-transform"
                       >
@@ -321,30 +351,45 @@ export default function BlogDashboard() {
                     </div>
                   </div>
                 ) : (
-                  <div 
-                    onClick={() => coverInputRef.current?.click()} 
+                  <div
+                    onClick={() => coverInputRef.current?.click()}
                     className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-all"
                   >
-                    <MdCloudUpload size={40} className="mx-auto text-gray-300 dark:text-gray-600 mb-2" />
-                    <p className="text-sm font-medium text-gray-400">Set featured image</p>
+                    <MdCloudUpload
+                      size={40}
+                      className="mx-auto text-gray-300 dark:text-gray-600 mb-2"
+                    />
+                    <p className="text-sm font-medium text-gray-400">
+                      Set featured image
+                    </p>
                   </div>
                 )}
-                <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={(e) => uploadCover(e.target.files)} />
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => uploadCover(e.target.files)}
+                />
               </section>
 
               {/* Excerpt Section */}
               <section className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <div>
-                  <label className={labelCls}>Excerpt / Short Description</label>
-                  <textarea 
-                    {...register("shortDescription")} 
-                    rows={4} 
-                    maxLength={200} 
-                    className={`${inputCls} resize-none`} 
-                    placeholder="Briefly describe this post for search results and social sharing..." 
+                  <label className={labelCls}>
+                    Excerpt / Short Description
+                  </label>
+                  <textarea
+                    {...register("shortDescription")}
+                    rows={4}
+                    maxLength={200}
+                    className={`${inputCls} resize-none`}
+                    placeholder="Briefly describe this post for search results and social sharing..."
                   />
                   <div className="flex justify-end mt-1">
-                    <span className="text-[10px] text-gray-400">{(watch("shortDescription") || "").length}/200</span>
+                    <span className="text-[10px] text-gray-400">
+                      {(watch("shortDescription") || "").length}/200
+                    </span>
                   </div>
                 </div>
               </section>
@@ -362,8 +407,12 @@ export default function BlogDashboard() {
       {/* LIST HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Blog Posts</h1>
-          <p className="text-gray-500 dark:text-gray-400 font-medium">Create, edit and manage your content strategy</p>
+          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
+            Blog Posts
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 font-medium">
+            Create, edit and manage your content strategy
+          </p>
         </div>
         <button
           onClick={() => {
@@ -379,9 +428,23 @@ export default function BlogDashboard() {
 
       {/* STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <StatCard title="Total Posts" value={String(blogs.length)} icon={<MdVisibility className="text-blue-500" />} />
-        <StatCard title="Published" value={String(blogs.filter((b) => b.status === "published").length)} color="green" icon={<MdPublish className="text-green-500" />} />
-        <StatCard title="Drafts" value={String(blogs.filter((b) => b.status === "draft").length)} color="yellow" icon={<MdDrafts className="text-yellow-600" />} />
+        <StatCard
+          title="Total Posts"
+          value={String(blogs.length)}
+          icon={<MdVisibility className="text-blue-500" />}
+        />
+        <StatCard
+          title="Published"
+          value={String(blogs.filter((b) => b.status === "published").length)}
+          color="green"
+          icon={<MdPublish className="text-green-500" />}
+        />
+        <StatCard
+          title="Drafts"
+          value={String(blogs.filter((b) => b.status === "draft").length)}
+          color="yellow"
+          icon={<MdDrafts className="text-yellow-600" />}
+        />
       </div>
 
       {/* CONTENT LIST */}
@@ -393,11 +456,22 @@ export default function BlogDashboard() {
           </div>
         ) : blogs.length === 0 ? (
           <div className="p-20 text-center">
-            <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">📝</div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No posts found</h3>
-            <p className="text-gray-500 max-w-sm mx-auto mb-8">Ready to share some knowledge? Start by creating your first blog post today.</p>
+            <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+              📝
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              No posts found
+            </h3>
+            <p className="text-gray-500 max-w-sm mx-auto mb-8">
+              Ready to share some knowledge? Start by creating your first blog
+              post today.
+            </p>
             <button
-              onClick={() => { setShowForm(true); setEditId(null); reset(); }}
+              onClick={() => {
+                setShowForm(true);
+                setEditId(null);
+                reset();
+              }}
               className="px-8 py-3 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors"
             >
               Create First Post
@@ -413,16 +487,24 @@ export default function BlogDashboard() {
                 {/* Image */}
                 <div className="w-full md:w-40 h-28 rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 border border-gray-100 dark:border-gray-700">
                   {blog.coverImage?.url ? (
-                    <img src={blog.coverImage.url} alt={blog.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <img
+                      src={blog.coverImage.url}
+                      alt={blog.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-600 font-bold text-xs uppercase">No Image</div>
+                    <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-600 font-bold text-xs uppercase">
+                      No Image
+                    </div>
                   )}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex items-center flex-wrap gap-2">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate pr-4">{blog.title}</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate pr-4">
+                      {blog.title}
+                    </h3>
                     <span
                       className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-widest ${
                         blog.status === "published"
@@ -439,10 +521,14 @@ export default function BlogDashboard() {
                   <div className="flex items-center flex-wrap gap-4 text-xs font-bold text-gray-400 uppercase tracking-tighter">
                     <span className="text-blue-500">{blog.category}</span>
                     <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
-                      <span>By {blog.author}</span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
-                      <span suppressHydrationWarning>{blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : "N/A"}</span>
-                    </div>
+                    <span>By {blog.author}</span>
+                    <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+                    <span suppressHydrationWarning>
+                      {blog.createdAt
+                        ? new Date(blog.createdAt).toLocaleDateString()
+                        : "N/A"}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Actions */}
@@ -498,10 +584,14 @@ const StatCard = ({
   return (
     <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 flex flex-col justify-between border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
       <div className="flex justify-between items-start mb-4">
-        <p className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wider">{title}</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wider">
+          {title}
+        </p>
         <div className={`p-2 rounded-xl ${colors[color]}`}>{icon}</div>
       </div>
-      <h2 className="text-4xl font-black text-gray-900 dark:text-white">{value}</h2>
+      <h2 className="text-4xl font-black text-gray-900 dark:text-white">
+        {value}
+      </h2>
     </div>
   );
 };

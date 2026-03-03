@@ -247,7 +247,7 @@ export default function SidePanel({ selected, setSelected }: SidePanelProps) {
                     Admin User
                   </h3>
                   <p className={`text-xs ${getTextColor("muted")}`}>
-                    {(isLoggedIn && user?.email) ||
+                    {(isLoggedIn && (user as any)?.email) ||
                       "mkt.luisalvarado@gmail.com"}
                   </p>
                 </div>
